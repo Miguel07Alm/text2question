@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { ExpandedTextarea } from '@/components/expanded-textarea'
 import { NumberSelector } from '@/components/number-selector'
 import { ModeToggle } from '@/components/ModeToggle'
+import { GithubIcon } from 'lucide-react'
 
 export default function Home() {
   const [input, setInput] = useState('')
@@ -97,15 +98,19 @@ export default function Home() {
                       />
                   </div>
               </div>
-                {isLoading ? (
-                    <Submit onClick={handleStop} loading={false}>
-                        Stop Generation
-                    </Submit>
-                ) : (
-                    <Submit onClick={handleSubmit} loading={isLoading} disabled={!input && !fileContent}>
-                        Generate Questions
-                    </Submit>
-                )}
+              {isLoading ? (
+                  <Submit onClick={handleStop} loading={false}>
+                      Stop Generation
+                  </Submit>
+              ) : (
+                  <Submit
+                      onClick={handleSubmit}
+                      loading={isLoading}
+                      disabled={!input && !fileContent}
+                  >
+                      Generate Questions
+                  </Submit>
+              )}
               {result &&
                   Array.isArray(result.questions) &&
                   result.questions.length > 0 && (
@@ -114,6 +119,15 @@ export default function Home() {
                       />
                   )}
           </div>
+          <footer className="mt-12 text-center">
+              <a
+                  href="https://github.com/Miguel07Alm/text2question"
+                  target="_blank"
+                  rel="noopener noreferrer"
+              >
+                  <GithubIcon className="w-6 h-6 inline-block text-gray-900 dark:text-gray-100" />
+              </a>
+          </footer>
       </main>
   );
 }
