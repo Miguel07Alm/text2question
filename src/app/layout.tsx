@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Text2Question - Generate Quiz Exams from Text or PDFs",
   description: "Generate multiple-choice, short-answer or true-false quiz exams from text descriptions or PDF documents using AI",
+  
 };
 
 export default function RootLayout({

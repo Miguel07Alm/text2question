@@ -22,6 +22,8 @@ export function QuestionList({ questions }: QuestionListProps) {
     const [isChecking, setIsChecking] = useState(false);
 
     const handleSelect = (questionIndex: number, answer: number | string) => {
+        console.log("🚀 ~ handleSelect ~ answer:", answer)
+        console.log("🚀 ~ handleSelect ~ questionIndex:", questionIndex)
         setSelectedAnswers((prev) => {
             const newAnswers = [...prev];
             newAnswers[questionIndex] = answer;
@@ -60,8 +62,13 @@ export function QuestionList({ questions }: QuestionListProps) {
                 String(question.correctAnswer)
             );
         }
-
+console.log(
+    "🚀 ~ checkAnswer ~ question.correctAnswer:",
+    question.correctAnswer
+);
+console.log("🚀 ~ checkAnswer ~ selectedAnswer:", selectedAnswer);
         return selectedAnswer === question.correctAnswer;
+        
     };
 
     const handleCheckAnswers = async () => {
@@ -80,6 +87,13 @@ export function QuestionList({ questions }: QuestionListProps) {
                 ? prev.filter(i => i !== index)
                 : [...prev, index]
         );
+    };
+
+    const handleRetakeQuiz = () => {
+        setSelectedAnswers(new Array(questions.length).fill(null));
+        setShowResults(false);
+        setAnswerResults(new Array(questions.length).fill(false));
+        setShowHint([]);
     };
 
     return (
@@ -230,13 +244,18 @@ export function QuestionList({ questions }: QuestionListProps) {
             )}
 
             {showResults && (
-                <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
-                    <h3 className="text-lg font-medium mb-2">Summary</h3>
-                    <p>
-                        Correct:{" "}
-                        {answerResults.filter(result => result).length}{" "}
-                        out of {questions.length}
-                    </p>
+                <div className="space-y-4">
+                    <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <h3 className="text-lg font-medium mb-2">Summary</h3>
+                        <p>
+                            Correct:{" "}
+                            {answerResults.filter(result => result).length}{" "}
+                            out of {questions.length}
+                        </p>
+                    </div>
+                    <Submit onClick={handleRetakeQuiz} loading={false}>
+                        Retake Quiz
+                    </Submit>
                 </div>
             )}
         </div>
