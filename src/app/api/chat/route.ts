@@ -1,10 +1,8 @@
 import { GenerateQuestionsParams, QuestionSchema } from "@/types/types";
-import { google } from "@ai-sdk/google";
 import { streamObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
     try {
@@ -15,7 +13,6 @@ export async function POST(req: Request) {
             `The questions should be ${questionType.replace('-', ' ')}.`;
 
         const result = streamObject({
-            // model: google("gemini-2.0-flash-exp"),
             model: openai("gpt-4o-mini"),
             schema: QuestionSchema,
             messages: [

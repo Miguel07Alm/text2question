@@ -7,6 +7,7 @@ export const QuestionSchema = z.object({
             type: z.enum(["multiple-choice", "true-false", "short-answer"]),
             options: z.array(z.string().min(1)),
             correctAnswer: z.union([z.number().int().min(0), z.string(), z.boolean()]),
+            hint: z.string().optional(),
         })
     ),
 });
@@ -16,6 +17,7 @@ export type Question = {
     type?: "multiple-choice" | "true-false" | "short-answer";
     options?: string[];
     correctAnswer?: number | string;
+    hint?: string;
 } | undefined;
 
 export type GenerateQuestionsParams = {

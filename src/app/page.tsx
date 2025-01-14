@@ -32,15 +32,17 @@ export default function Home() {
     stop()
   }
 
-
   return (
       <main className="min-h-screen p-8 max-w-2xl mx-auto">
           <div className="flex w-full justify-end">
               <ModeToggle />
           </div>
           <h1 className="text-4xl font-bold mb-8 text-center text-gray-900 dark:text-gray-100">
-              Text To Questions 
+              Text2Question AI Generator
           </h1>
+          <h2 className="text-2xl font-semibold mb-4 text-center text-gray-700 dark:text-gray-300">
+              Generate quiz questions from any given text using AI.
+          </h2>
           <div className="space-y-8">
               <FileUpload onFileContent={setFileContent} />
               <ExpandedTextarea

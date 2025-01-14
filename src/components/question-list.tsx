@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Submit } from "./submit";
 import { Question } from "@/types/types";
 import { ExportQuestions } from "./export-questions";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, HelpCircle } from "lucide-react";
 
 interface QuestionListProps {
     questions: Question[];
@@ -15,6 +15,11 @@ export function QuestionList({ questions }: QuestionListProps) {
         new Array(questions.length).fill(null)
     );
     const [showResults, setShowResults] = useState(false);
+    const [showHint, setShowHint] = useState<number[]>([]);
+    const [answerResults, setAnswerResults] = useState<boolean[]>(
+        new Array(questions.length).fill(false)
+    );
+    const [isChecking, setIsChecking] = useState(false);
 
     const handleSelect = (questionIndex: number, answer: number | string) => {
         setSelectedAnswers((prev) => {
@@ -24,18 +29,57 @@ export function QuestionList({ questions }: QuestionListProps) {
         });
     };
 
-    const isCorrectAnswer = (questionIndex: number) => {
+    const checkShortAnswer = async (userAnswer: string, correctAnswer: string) => {
+        try {
+            const response = await fetch('/api/check-answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userAnswer, correctAnswer })
+            });
+            const { isCorrect } = await response.json();
+            return isCorrect;
+        } catch (error) {
+            console.error("Error checking short answer:", error);
+            return false;
+        }
+    };
+
+    const checkAnswer = async (questionIndex: number) => {
         const question = questions[questionIndex];
         const selectedAnswer = selectedAnswers[questionIndex];
 
-        if (question && question.type === "true-false") {
-            return (
-                String(selectedAnswer).toLowerCase() ===
-                String(question.correctAnswer).toLowerCase()
+        if (!question) return false;
+
+        if (question.type === "true-false") {
+            return String(selectedAnswer).toLowerCase() === String(question.correctAnswer).toLowerCase();
+        }
+
+        if (question.type === "short-answer") {
+            return await checkShortAnswer(
+                String(selectedAnswer),
+                String(question.correctAnswer)
             );
         }
 
-        return question ? selectedAnswer === question.correctAnswer : false;
+        return selectedAnswer === question.correctAnswer;
+    };
+
+    const handleCheckAnswers = async () => {
+        setIsChecking(true);
+        const results = await Promise.all(
+            questions.map((_, index) => checkAnswer(index))
+        );
+        setAnswerResults(results);
+        setShowResults(true);
+        setIsChecking(false);
+    };
+
+    const toggleHint = (index: number) => {
+        setShowHint(prev => 
+            prev.includes(index) 
+                ? prev.filter(i => i !== index)
+                : [...prev, index]
+        );
     };
 
     return (
@@ -52,7 +96,7 @@ export function QuestionList({ questions }: QuestionListProps) {
                     key={qIndex}
                     className={`p-6 rounded-xl border ${
                         showResults
-                            ? isCorrectAnswer(qIndex)
+                            ? answerResults[qIndex]
                                 ? "border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-900/10"
                                 : "border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-900/10"
                             : "border-gray-200 dark:border-gray-800"
@@ -126,9 +170,25 @@ export function QuestionList({ questions }: QuestionListProps) {
                                             />
                                         )}
                                     </div>
+                                    {question?.hint && (
+                                        <div className="mt-2">
+                                            <button
+                                                onClick={() => toggleHint(qIndex)}
+                                                className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
+                                            >
+                                                <HelpCircle className="w-4 h-4" />
+                                                {showHint.includes(qIndex) ? "Hide hint" : "Show hint"}
+                                            </button>
+                                            {showHint.includes(qIndex) && (
+                                                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                                    {question.hint}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
                                     {showResults && (
                                         <div className="flex items-center gap-2 mt-4 text-sm">
-                                            {isCorrectAnswer(qIndex) ? (
+                                            {answerResults[qIndex] ? (
                                                 <>
                                                     <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                                                     <span className="text-green-600 dark:text-green-400">
@@ -160,7 +220,11 @@ export function QuestionList({ questions }: QuestionListProps) {
             ))}
 
             {!showResults && (
-                <Submit onClick={() => setShowResults(true)}>
+                <Submit 
+                    onClick={handleCheckAnswers} 
+                    loading={isChecking}
+                    disabled={isChecking}
+                >
                     Check answers
                 </Submit>
             )}
@@ -170,11 +234,7 @@ export function QuestionList({ questions }: QuestionListProps) {
                     <h3 className="text-lg font-medium mb-2">Summary</h3>
                     <p>
                         Correct:{" "}
-                        {questions.reduce(
-                            (count, _, idx) =>
-                                count + (isCorrectAnswer(idx) ? 1 : 0),
-                            0
-                        )}{" "}
+                        {answerResults.filter(result => result).length}{" "}
                         out of {questions.length}
                     </p>
                 </div>
