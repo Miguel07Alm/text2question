@@ -2,7 +2,7 @@ import { GenerateQuestionsParams, QuestionSchema } from "@/types/types";
 import { streamObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
     try {
