@@ -8,6 +8,10 @@ export async function POST(req: Request) {
     try {
         const { input, fileContent, questionType, questionCount }: GenerateQuestionsParams = await req.json();
 
+        if (questionCount > 20) {
+            return new Response("The maximum number of questions is 20.", { status: 400 });
+        }
+
         const typePrompt = questionType === 'mixed' ? 
             'The questions can be multiple-choice, true-false, or short-answer.' : 
             `The questions should be ${questionType.replace('-', ' ')}.`;
