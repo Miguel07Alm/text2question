@@ -16,6 +16,8 @@ import { ModeToggle } from '@/components/ModeToggle'
 import { GithubIcon } from 'lucide-react'
 import { ShareQuiz } from '@/components/share-quiz'
 import { ExportQuestions } from '@/components/export-questions'
+import { shuffleArray, shuffleMultipleChoiceOptions } from '@/utils/array'
+import { useToast } from '@/hooks/use-toast'
 
 // Separate component for quiz content
 function QuizContent() {
@@ -26,6 +28,7 @@ function QuizContent() {
   const [maxQuestions, setMaxQuestions] = useState(20)
   const [sharedQuiz, setSharedQuiz] = useState<Question[] | null>(null);
   const searchParams = useSearchParams();
+  const {toast} = useToast();
 
   const { isLoading, object: result, submit, stop } = useObject({
       api: "/api/chat",
@@ -37,12 +40,18 @@ function QuizContent() {
     if (quizParam) {
         console.log("Raw quiz param:", quizParam);
         const decoded = decodeQuiz(quizParam);
+        
         console.log("Decoded quiz:", decoded);
         if (decoded && Array.isArray(decoded) && decoded.length > 0) {
-            setSharedQuiz(decoded);
+            const shuffledQuestions = shuffleArray([...decoded]);
+            const updatedShuffledQuestions = shuffledQuestions.map(shuffleMultipleChoiceOptions);
+            setSharedQuiz(updatedShuffledQuestions);
         } else {
             console.error("Invalid decoded quiz data");
-            // Opcional: mostrar un mensaje de error al usuario
+            toast({
+                variant: "destructive",
+                description: "Invalid quiz data",
+            })
         }
     }
   }, [searchParams]);

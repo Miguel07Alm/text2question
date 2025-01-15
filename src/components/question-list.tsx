@@ -1,16 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Submit } from "./submit";
 import { Question } from "@/types/types";
 import { ExportQuestions } from "./export-questions";
 import { CheckCircle, XCircle, HelpCircle } from "lucide-react";
+import { shuffleArray, shuffleMultipleChoiceOptions } from "@/utils/array";
 
 interface QuestionListProps {
     questions: Question[];
 }
 
-export function QuestionList({ questions }: QuestionListProps) {
+export function QuestionList({ questions: initialQuestions }: QuestionListProps) {
+    
+
+    // Solo mezclar las preguntas inicialmente
+    const [questions, setQuestions] = useState(initialQuestions);
+
+    useEffect(() => {
+        setQuestions(initialQuestions);
+    }, [initialQuestions])
+    
+    // Mezclar las opciones de multiple-choice solo una vez al inicio
+    useEffect(() => {
+        if (questions.some(q => q.type === 'multiple-choice')) {
+            setQuestions(prevQuestions => 
+                prevQuestions.map(shuffleMultipleChoiceOptions)
+            );
+        }
+    }, []);
+
     const [selectedAnswers, setSelectedAnswers] = useState<(number | string)[]>(
         new Array(questions.length).fill(null)
     );
@@ -90,6 +109,10 @@ console.log("🚀 ~ checkAnswer ~ selectedAnswer:", selectedAnswer);
     };
 
     const handleRetakeQuiz = () => {
+        setQuestions(prevQuestions => {
+            const shuffledQuestions = shuffleArray([...prevQuestions]);
+            return shuffledQuestions.map(shuffleMultipleChoiceOptions);
+        });
         setSelectedAnswers(new Array(questions.length).fill(null));
         setShowResults(false);
         setAnswerResults(new Array(questions.length).fill(false));
@@ -102,7 +125,6 @@ console.log("🚀 ~ checkAnswer ~ selectedAnswer:", selectedAnswer);
                 <h2 className="text-xl font-semibold">
                     {showResults ? "Results" : "Questions"}
                 </h2>
-                <ExportQuestions questions={questions} />
             </div>
 
             {questions.map((question, qIndex) => (
@@ -238,6 +260,8 @@ console.log("🚀 ~ checkAnswer ~ selectedAnswer:", selectedAnswer);
                     onClick={handleCheckAnswers} 
                     loading={isChecking}
                     disabled={isChecking}
+                    primaryColor="green-600"
+                    foregroundColor="white"
                 >
                     Check answers
                 </Submit>

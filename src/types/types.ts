@@ -12,13 +12,13 @@ export const QuestionSchema = z.object({
     ),
 });
 
-export type Question = {
+export interface Question {
     question?: string;
     type?: "multiple-choice" | "true-false" | "short-answer";
     options?: string[];
     correctAnswer?: number | string;
     hint?: string;
-} | undefined;
+};
 
 export type GenerateQuestionsParams = {
     input: string;
