@@ -5,9 +5,10 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ShareQuizProps {
     questions: Question[];
+    isLoading: boolean;
 }
 
-export function ShareQuiz({ questions }: ShareQuizProps) {
+export function ShareQuiz({ questions, isLoading }: ShareQuizProps) {
   const { toast } = useToast();
 
 
@@ -25,7 +26,9 @@ export function ShareQuiz({ questions }: ShareQuizProps) {
     return (
         <button
             onClick={handleShare}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            title={isLoading ? "Wait for sharing the quiz after loading all the questions" : "Share Quiz"}
         >
             <Share2 className="w-4 h-4" />
             Share Quiz

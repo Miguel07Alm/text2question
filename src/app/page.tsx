@@ -158,7 +158,7 @@ function QuizContent() {
                   result.questions.length > 0 && (
                       <div className="space-y-8">
                           <div className="flex justify-between items-center">
-                              <ShareQuiz questions={result.questions as Question[]} />
+                              <ShareQuiz questions={result.questions as Question[]} isLoading={isLoading} />
                               <ExportQuestions questions={result.questions as Question[]} />
                           </div>
                           <QuestionList questions={result.questions as Question[]} />
