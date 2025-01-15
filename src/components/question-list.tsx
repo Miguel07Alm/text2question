@@ -277,7 +277,7 @@ console.log("🚀 ~ checkAnswer ~ selectedAnswer:", selectedAnswer);
                             out of {questions.length}
                         </p>
                     </div>
-                    <Submit onClick={handleRetakeQuiz} loading={false}>
+                    <Submit onClick={handleRetakeQuiz} loading={false} primaryColor="yellow" foregroundColor="black">
                         Retake Quiz
                     </Submit>
                 </div>

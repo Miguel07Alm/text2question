@@ -18,6 +18,7 @@ import { ShareQuiz } from '@/components/share-quiz'
 import { ExportQuestions } from '@/components/export-questions'
 import { shuffleArray, shuffleMultipleChoiceOptions } from '@/utils/array'
 import { useToast } from '@/hooks/use-toast'
+import { useTheme } from 'next-themes'
 
 // Separate component for quiz content
 function QuizContent() {
@@ -29,6 +30,7 @@ function QuizContent() {
   const [sharedQuiz, setSharedQuiz] = useState<Question[] | null>(null);
   const searchParams = useSearchParams();
   const {toast} = useToast();
+  const {theme} = useTheme();
 
   const { isLoading, object: result, submit, stop } = useObject({
       api: "/api/chat",
@@ -38,23 +40,25 @@ function QuizContent() {
   useEffect(() => {
     const quizParam = searchParams.get('quiz');
     if (quizParam) {
-        console.log("Raw quiz param:", quizParam);
-        const decoded = decodeQuiz(quizParam);
-        
-        console.log("Decoded quiz:", decoded);
-        if (decoded && Array.isArray(decoded) && decoded.length > 0) {
-            const shuffledQuestions = shuffleArray([...decoded]);
-            const updatedShuffledQuestions = shuffledQuestions.map(shuffleMultipleChoiceOptions);
-            setSharedQuiz(updatedShuffledQuestions);
-        } else {
-            console.error("Invalid decoded quiz data");
+        try {
+            const decoded = decodeQuiz(quizParam);
+            if (decoded && Array.isArray(decoded) && decoded.length > 0) {
+                const shuffledQuestions = shuffleArray([...decoded]);
+                const updatedShuffledQuestions = shuffledQuestions.map(shuffleMultipleChoiceOptions);
+                setSharedQuiz(updatedShuffledQuestions);
+            } else {
+                throw new Error("Invalid quiz data");
+            }
+        } catch (error) {
+            console.error("Error loading shared quiz:", error);
             toast({
                 variant: "destructive",
-                description: "Invalid quiz data",
-            })
+                title: "Error",
+                description: "Could not load the shared quiz. The link might be invalid or corrupted.",
+            });
         }
     }
-  }, [searchParams]);
+  }, [searchParams, toast]);
 
   const handleSubmit = async () => {
     submit({ input, fileContent, questionType, questionCount })
@@ -83,6 +87,7 @@ function QuizContent() {
         </main>
     );
   }
+
 
   return (
       <main className="min-h-screen p-8 max-w-2xl mx-auto">
@@ -150,7 +155,7 @@ function QuizContent() {
                   </div>
               </div>
               {isLoading ? (
-                  <Submit onClick={handleStop} loading={false}>
+                  <Submit onClick={handleStop} loading={false} primaryColor='red-600' foregroundColor='white'>
                       Stop Generation
                   </Submit>
               ) : (
@@ -158,6 +163,8 @@ function QuizContent() {
                       onClick={handleSubmit}
                       loading={isLoading}
                       disabled={!input && !fileContent}
+                      primaryColor={"black"}
+                      foregroundColor={"white"}
                   >
                       Generate Questions
                   </Submit>
@@ -167,10 +174,17 @@ function QuizContent() {
                   result.questions.length > 0 && (
                       <div className="space-y-8">
                           <div className="flex justify-between items-center">
-                              <ShareQuiz questions={result.questions as Question[]} isLoading={isLoading} />
-                              <ExportQuestions questions={result.questions as Question[]} />
+                              <ShareQuiz
+                                  questions={result.questions as Question[]}
+                                  isLoading={isLoading}
+                              />
+                              <ExportQuestions
+                                  questions={result.questions as Question[]}
+                              />
                           </div>
-                          <QuestionList questions={result.questions as Question[]} />
+                          <QuestionList
+                              questions={result.questions as Question[]}
+                          />
                       </div>
                   )}
           </div>
