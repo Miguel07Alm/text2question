@@ -19,6 +19,28 @@ Text2Question generates quiz questions from any given text. Users can upload tex
 - 💡 Hint system for questions
 - ✨ Real-time answer verification
 - 📤 Export functionality
+- 🔀 Random question and answer shuffling
+- 🔗 Share quizzes via URL
+- 🔄 Retake quizzes with new random order
+- 📱 Fully responsive design
+
+## How It Works
+
+### Quiz Generation
+- Input your text or upload a file
+- Select question type and quantity
+- AI generates relevant questions
+
+### Quiz Taking
+- Questions are presented in random order
+- Multiple choice options are shuffled for better learning
+- Immediate feedback on answers
+- Option to retake quiz with reshuffled questions
+
+### Sharing
+- Generate shareable links for your quizzes
+- Recipients get randomized question order
+- Perfect for classroom or study group use
 
 ## Prerequisites
 

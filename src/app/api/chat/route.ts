@@ -14,7 +14,9 @@ export async function POST(req: Request) {
 
         const typePrompt = questionType === 'mixed' ? 
             'The questions can be multiple-choice, true-false, or short-answer.' : 
-            `The questions should be ${questionType.replace('-', ' ')}.`;
+            `The questions must be ${questionType.replace('-', ' ')}.`;
+        
+        console.log("🚀 ~ POST ~ typePrompt:", typePrompt);
 
         const result = streamObject({
             model: openai("gpt-4o-mini"),
@@ -37,6 +39,13 @@ export async function POST(req: Request) {
               For true/false, avoid absolute statements and focus on testing understanding.
               For multiple-choice, ensure all options are of similar length and grammatically consistent.
               For short answers, specify clearly what constitutes a complete response.
+
+              You must strictly use this type of questions: ${questionType.replace(
+                  "-",
+                  " "
+              )}
+
+              If there is only a question type, you must avoid using other types of questions.
               
               Important: Ensure hints (when provided) guide thinking rather than give away answers.`,
                 },
