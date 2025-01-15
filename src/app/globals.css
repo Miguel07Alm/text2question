@@ -67,7 +67,8 @@
     font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
 
-  pre, code {
+  pre,
+  code {
     font-family: var(--font-geist-mono), monospace;
   }
 }
@@ -75,5 +76,19 @@
 @layer base {
   * {
     @apply border-border;
+  }
+
+  @keyframes loading {
+    0% {
+      transform: translateX(-100%)
+    }
+
+    50% {
+      transform: translateX(100%)
+    }
+
+    100% {
+      transform: translateX(-100%)
+    }
   }
 }
