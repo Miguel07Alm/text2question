@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { decodeQuiz } from '@/utils/share'
 import { Submit } from '@/components/submit'
 import { FileUpload } from '@/components/file-upload'
 import { QuestionList } from '@/components/question-list'
@@ -12,6 +14,8 @@ import { ExpandedTextarea } from '@/components/expanded-textarea'
 import { NumberSelector } from '@/components/number-selector'
 import { ModeToggle } from '@/components/ModeToggle'
 import { GithubIcon } from 'lucide-react'
+import { ShareQuiz } from '@/components/share-quiz'
+import { ExportQuestions } from '@/components/export-questions'
 
 export default function Home() {
   const [input, setInput] = useState('')
@@ -19,11 +23,28 @@ export default function Home() {
   const [questionType, setQuestionType] = useState<'multiple-choice' | 'true-false' | 'short-answer' | 'mixed'>('mixed')
   const [questionCount, setQuestionCount] = useState(5)
   const [maxQuestions, setMaxQuestions] = useState(20)
+  const [sharedQuiz, setSharedQuiz] = useState<Question[] | null>(null);
+  const searchParams = useSearchParams();
 
   const { isLoading, object: result, submit, stop } = useObject({
       api: "/api/chat",
       schema: QuestionSchema,
   });
+
+  useEffect(() => {
+    const quizParam = searchParams.get('quiz');
+    if (quizParam) {
+        console.log("Raw quiz param:", quizParam);
+        const decoded = decodeQuiz(quizParam);
+        console.log("Decoded quiz:", decoded);
+        if (decoded && Array.isArray(decoded) && decoded.length > 0) {
+            setSharedQuiz(decoded);
+        } else {
+            console.error("Invalid decoded quiz data");
+            // Opcional: mostrar un mensaje de error al usuario
+        }
+    }
+  }, [searchParams]);
 
   const handleSubmit = async () => {
     submit({ input, fileContent, questionType, questionCount })
@@ -31,6 +52,26 @@ export default function Home() {
 
   const handleStop = () => {
     stop()
+  }
+
+  if (sharedQuiz) {
+    return (
+        <main className="min-h-screen p-8 max-w-2xl mx-auto">
+            <div className="flex w-full justify-between items-center mb-8">
+                <button 
+                    onClick={() => setSharedQuiz(null)}
+                    className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                    Create New Quiz
+                </button>
+                <ModeToggle />
+            </div>
+            <h1 className="text-4xl font-bold mb-8 text-center">
+                Shared Quiz
+            </h1>
+            <QuestionList questions={sharedQuiz} />
+        </main>
+    );
   }
 
   return (
@@ -114,9 +155,13 @@ export default function Home() {
               {result &&
                   Array.isArray(result.questions) &&
                   result.questions.length > 0 && (
-                      <QuestionList
-                          questions={result.questions as Question[]}
-                      />
+                      <div className="space-y-8">
+                          <div className="flex justify-between items-center">
+                              <ShareQuiz questions={result.questions as Question[]} />
+                              <ExportQuestions questions={result.questions as Question[]} />
+                          </div>
+                          <QuestionList questions={result.questions as Question[]} />
+                      </div>
                   )}
           </div>
           <footer className="mt-12 text-center">
