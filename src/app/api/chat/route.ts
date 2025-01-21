@@ -6,7 +6,14 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
     try {
-        const { input, fileContent, questionType, questionCount, optionsCount = 4 }: GenerateQuestionsParams & { optionsCount?: number } = await req.json();
+        const { 
+            input, 
+            fileContent, 
+            questionType, 
+            questionCount, 
+            optionsCount = 4,
+            systemPrompt 
+        }: GenerateQuestionsParams = await req.json();
 
         if (questionCount > 20) {
             return new Response("The maximum number of questions is 20.", { status: 400 });
@@ -18,7 +25,7 @@ export async function POST(req: Request) {
         
         console.log("🚀 ~ POST ~ typePrompt:", typePrompt);
 
-        const systemMessage = `You are an expert quiz creator with years of experience in educational assessment and instructional design.
+        const finalSystemPrompt = systemPrompt || `You are an expert quiz creator with years of experience in educational assessment and instructional design.
               Follow these principles when generating ${questionCount} questions:
               
               1. Progressive difficulty: Start with foundational concepts and gradually increase complexity
@@ -57,7 +64,7 @@ export async function POST(req: Request) {
             messages: [
                 {
                     role: "system",
-                    content: systemMessage,
+                    content: finalSystemPrompt,
                 },
                 {
                     role: "user",

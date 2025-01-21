@@ -16,10 +16,8 @@ export function ShareQuiz({ questions, isLoading }: ShareQuizProps) {
         const encoded = encodeQuiz(questions);
         const url = `${window.location.origin}?quiz=${encoded}`;
         
-        // Copiar al portapapeles
         navigator.clipboard.writeText(url);
         
-        // Mostrar mensaje de copiado (puedes usar una librería de toast)
         toast({description: "Quiz link copied to clipboard!"});
     };
 

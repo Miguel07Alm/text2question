@@ -9,7 +9,7 @@ export const QuestionSchema = z.object({
             correctAnswer: z.union([z.number().int().min(0), z.string(), z.boolean()]),
             hint: z.string().optional(),
             why: z.string(),
-            page: z.number().optional(), // Added page field
+            page: z.number().optional(), 
         })
     ),
 });
@@ -21,7 +21,7 @@ export interface Question {
     correctAnswer?: number | string;
     hint?: string;
     why?: string;
-    page?: number; // Added page field
+    page?: number;
 };
 
 export type GenerateQuestionsParams = {
@@ -29,4 +29,6 @@ export type GenerateQuestionsParams = {
     fileContent: string;
     questionType: 'multiple-choice' | 'true-false' | 'short-answer' | 'mixed';
     questionCount: number;
+    optionsCount: number;
+    systemPrompt?: string;
 };

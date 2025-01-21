@@ -25,6 +25,14 @@ Text2Question generates quiz questions from any given text. Users can upload tex
 - 🔗 Share quizzes via URL
 - 🔄 Retake quizzes with new random order
 - 📱 Fully responsive design
+- 🎛️ Customizable AI Behavior:
+  - Modify system prompts directly
+  - Fine-tune AI question generation
+- 🛠️ Enhanced Configuration:
+  - Custom number of options (2-6) for multiple choice
+  - Advanced system prompt editing
+  - Persistent user preferences
+
 
 ## How It Works
 
@@ -51,6 +59,20 @@ Text2Question generates quiz questions from any given text. Users can upload tex
 - Generate shareable links for your quizzes
 - Recipients get randomized question order
 - Perfect for classroom or study group use
+
+## Customizing AI Behavior
+
+You can customize how the AI generates questions by:
+
+1. Clicking the settings icon in the top-right corner
+2. Modifying the system prompt
+3. Testing different instructions
+4. Saving your preferred configuration
+
+The AI will remember your settings between sessions, but be aware that it may occasionally:
+- Generate unexpected content
+- Deviate from instructions
+- Produce inaccurate information
 
 ## Prerequisites
 

@@ -26,6 +26,8 @@ import { shuffleArray, shuffleMultipleChoiceOptions } from "@/utils/array";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
+import { SystemPromptDialog } from "@/components/system-prompt-dialog";
+import { AIDisclaimer } from "@/components/ai-disclaimer";
 
 // Separate component for quiz content
 function QuizContent() {
@@ -38,6 +40,7 @@ function QuizContent() {
     const [maxQuestions, setMaxQuestions] = useState(20);
     const [sharedQuiz, setSharedQuiz] = useState<Question[] | null>(null);
     const [optionsCount, setOptionsCount] = useState(4);
+    const [systemPrompt, setSystemPrompt] = useState<string>("");
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const router = useRouter();
@@ -79,7 +82,14 @@ function QuizContent() {
     }, [searchParams, toast]);
 
     const handleSubmit = async () => {
-        submit({ input, fileContent, questionType, questionCount });
+        submit({ 
+            input, 
+            fileContent, 
+            questionType, 
+            questionCount,
+            optionsCount,
+            systemPrompt, // Add this to your params
+        });
     };
 
     const handleStop = () => {
@@ -111,9 +121,13 @@ function QuizContent() {
 
     return (
         <main className="min-h-screen p-8 max-w-2xl mx-auto">
-            <div className="flex w-full justify-end">
+            <div className="flex w-full justify-between items-center">
+                <SystemPromptDialog onPromptChange={setSystemPrompt} />
                 <ModeToggle />
             </div>
+
+            <AIDisclaimer />
+
             <h1 className="text-4xl font-bold mb-8 text-center text-gray-900 dark:text-gray-100">
                 AI-Powered Text To Quiz Generator
             </h1>
