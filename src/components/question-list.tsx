@@ -227,23 +227,47 @@ console.log("🚀 ~ checkAnswer ~ selectedAnswer:", selectedAnswer);
                                             {answerResults[qIndex] ? (
                                                 <>
                                                     <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                                                    <span className="text-green-600 dark:text-green-400">
-                                                        Correct!
-                                                    </span>
+                                                    <div className="space-y-2">
+                                                        <span className="text-green-600 dark:text-green-400">
+                                                            Correct!
+                                                        </span>
+                                                        {question.why && (
+                                                            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm italic">
+                                                                {question.why}
+                                                                {question.page && (
+                                                                    <span className="ml-2 font-semibold">
+                                                                        (Page {question.page})
+                                                                    </span>
+                                                                )}
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </>
                                             ) : (
                                                 <>
                                                     <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                                                    <span className="text-red-600 dark:text-red-400">
-                                                        Incorrect. The correct answer was:{" "}
-                                                        {question.type ===
-                                                            "multiple-choice" &&
-                                                        question.options
-                                                            ? question.options[
-                                                                  question.correctAnswer as number
-                                                              ]
-                                                            : question.correctAnswer}
-                                                    </span>
+                                                    <div className="space-y-2">
+                                                        <span className="text-red-600 dark:text-red-400">
+                                                            Incorrect. The correct answer was:{" "}
+                                                            {question.type ===
+                                                                "multiple-choice" &&
+                                                            question.options
+                                                                ? question.options[
+                                                                    question.correctAnswer as number
+                                                                ]
+                                                                : question.correctAnswer}
+                                                        </span>
+                                                        {question.why && (
+                                                            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm italic">
+                                                                {question.why}
+                                                                {question.page && (
+                                                                    <span className="ml-2 font-semibold">
+                                                                        (Page {question.page})
+                                                                    </span>
+                                                                )}
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </>
                                             )}
                                         </div>

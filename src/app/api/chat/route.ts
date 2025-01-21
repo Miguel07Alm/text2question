@@ -6,7 +6,7 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
     try {
-        const { input, fileContent, questionType, questionCount }: GenerateQuestionsParams = await req.json();
+        const { input, fileContent, questionType, questionCount, optionsCount = 4 }: GenerateQuestionsParams & { optionsCount?: number } = await req.json();
 
         if (questionCount > 20) {
             return new Response("The maximum number of questions is 20.", { status: 400 });
@@ -18,13 +18,7 @@ export async function POST(req: Request) {
         
         console.log("🚀 ~ POST ~ typePrompt:", typePrompt);
 
-        const result = streamObject({
-            model: openai("gpt-4o-mini"),
-            schema: QuestionSchema,
-            messages: [
-                {
-                    role: "system",
-                    content: `You are an expert quiz creator with years of experience in educational assessment and instructional design.
+        const systemMessage = `You are an expert quiz creator with years of experience in educational assessment and instructional design.
               Follow these principles when generating ${questionCount} questions:
               
               1. Progressive difficulty: Start with foundational concepts and gradually increase complexity
@@ -47,7 +41,23 @@ export async function POST(req: Request) {
 
               If there is only a question type, you must avoid using other types of questions.
               
-              Important: Ensure hints (when provided) guide thinking rather than give away answers.`,
+              Important: Ensure hints (when provided) guide thinking rather than give away answers.
+              For multiple-choice questions, generate exactly ${optionsCount} options.
+
+              Additional requirements:
+              - When the content comes from a PDF or document with pages, include the page number where the answer can be found in the 'page' field
+              - The page number should be extracted from the context where the answer is found
+              - If no specific page number is available, omit the page field
+              
+              For example, if the answer comes from "Page 5:" in the text, set page: 5 in the response.`;
+
+        const result = streamObject({
+            model: openai("gpt-4o-mini"),
+            schema: QuestionSchema,
+            messages: [
+                {
+                    role: "system",
+                    content: systemMessage,
                 },
                 {
                     role: "user",

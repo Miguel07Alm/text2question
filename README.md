@@ -10,13 +10,15 @@ Text2Question generates quiz questions from any given text. Users can upload tex
 
 - 🤖 AI-powered question generation
 - 📝 Multiple question types:
-  - Multiple choice
+  - Multiple choice (with configurable number of options)
   - True/False
   - Short answer
   - Mixed mode
-- 📚 File upload support
+- 📚 File upload support with page reference tracking
 - 🎨 Dark/Light mode
 - 💡 Hint system for questions
+- 📖 Detailed explanations for each answer
+- 📄 Page references for questions from PDFs
 - ✨ Real-time answer verification
 - 📤 Export functionality
 - 🔀 Random question and answer shuffling
@@ -28,13 +30,21 @@ Text2Question generates quiz questions from any given text. Users can upload tex
 
 ### Quiz Generation
 - Input your text or upload a file
-- Select question type and quantity
-- AI generates relevant questions
+- Select question type and customize options:
+  - Choose number of questions
+  - Configure number of options for multiple choice questions (2-6 options)
+- AI generates relevant questions with:
+  - Detailed explanations for correct answers
+  - Page references for PDF content
+  - Helpful hints
 
 ### Quiz Taking
 - Questions are presented in random order
 - Multiple choice options are shuffled for better learning
-- Immediate feedback on answers
+- Immediate feedback includes:
+  - Correct/incorrect indication
+  - Detailed explanation of the correct answer
+  - Page reference for further reading (when available)
 - Option to retake quiz with reshuffled questions
 
 ### Sharing

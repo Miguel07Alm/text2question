@@ -22,7 +22,7 @@ export function FileUpload({ onFileContent }: FileUploadProps) {
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const content = await page.getTextContent();
-            text += content.items.filter((item) => "str" in item).map((item) => item.str).join(" ") + "\n";
+            text += content.items.filter((item) => "str" in item).map((item) => `Page ${page.pageNumber}: ` + item.str).join(" ") + "\n";
         }
 
         return text.trim();

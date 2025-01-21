@@ -8,6 +8,8 @@ export const QuestionSchema = z.object({
             options: z.array(z.string().min(1)),
             correctAnswer: z.union([z.number().int().min(0), z.string(), z.boolean()]),
             hint: z.string().optional(),
+            why: z.string(),
+            page: z.number().optional(), // Added page field
         })
     ),
 });
@@ -18,6 +20,8 @@ export interface Question {
     options?: string[];
     correctAnswer?: number | string;
     hint?: string;
+    why?: string;
+    page?: number; // Added page field
 };
 
 export type GenerateQuestionsParams = {
