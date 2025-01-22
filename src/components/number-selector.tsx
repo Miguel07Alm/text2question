@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import { Minus, Plus, Settings2 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -7,9 +8,10 @@ interface NumberSelectorProps {
     min?: number
     max?: number
     onMaxChange?: (newMax: number) => void
+    className?: string
 }
 
-export function NumberSelector({ value, onChange, min = 1, max = 20, onMaxChange }: NumberSelectorProps) {
+export function NumberSelector({ value, onChange, min = 1, max = 20, onMaxChange, className }: NumberSelectorProps) {
     const [isEditingMax, setIsEditingMax] = useState(false)
     const [localMax, setLocalMax] = useState(max)
     const presets = Array.from(new Set([5, 10, 15, localMax].filter((preset) => preset <= localMax)))
@@ -24,7 +26,7 @@ export function NumberSelector({ value, onChange, min = 1, max = 20, onMaxChange
     }
 
     return (
-        <div className="space-y-4">
+        <div className={cn("space-y-4", className)}>
             <div className="flex items-center space-x-4">
                 <button
                     onClick={() => value > min && onChange(value - 1)}

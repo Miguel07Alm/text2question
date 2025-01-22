@@ -10,7 +10,12 @@ Text2Question generates quiz questions from any given text. Users can upload tex
 
 - 🤖 AI-powered question generation
 - 📝 Multiple question types:
-  - Multiple choice (with configurable number of options)
+  - Multiple choice (with configurable number of options):
+    - Support for multiple correct answers
+    - Random correct answers mode
+    - Configurable range for random answers
+    - Smart answer distribution
+    - Visual feedback for multiple selections
   - True/False
   - Short answer
   - Mixed mode
@@ -32,7 +37,6 @@ Text2Question generates quiz questions from any given text. Users can upload tex
   - Custom number of options (2-6) for multiple choice
   - Advanced system prompt editing
   - Persistent user preferences
-
 
 ## How It Works
 
@@ -60,7 +64,24 @@ Text2Question generates quiz questions from any given text. Users can upload tex
 - Recipients get randomized question order
 - Perfect for classroom or study group use
 
-## Customizing AI Behavior
+## Advanced Features
+
+### Multiple Answer Support
+- Configure exact number of correct answers (1 to n-1 options)
+- Enable random mode for varying correct answers
+- Set minimum and maximum correct answers range
+- Smart distribution of correct answers across questions
+- Intelligent UI feedback for selection limits
+
+### Random Answer Mode
+- Automatically varies number of correct answers
+- Ensures diverse answer patterns
+- Prevents consecutive questions from having same number of answers
+- Even distribution across specified range
+- Real-time selection counter and limits
+
+
+### AI Behavior
 
 You can customize how the AI generates questions by:
 
@@ -124,4 +145,5 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 You can access the deployed application at the following URL:
 
 [https://text2question.vercel.app](https://text2question.vercel.app)
+```
 

@@ -6,7 +6,7 @@ import { decodeQuiz } from "@/utils/share";
 import { Submit } from "@/components/submit";
 import { FileUpload } from "@/components/file-upload";
 import { QuestionList } from "@/components/question-list";
-import { Question, QuestionSchema } from "@/types/types";
+import { GenerateQuestionsParams, Question, QuestionSchema } from "@/types/types";
 import { experimental_useObject as useObject } from "ai/react";
 import {
     Select,
@@ -28,6 +28,7 @@ import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { SystemPromptDialog } from "@/components/system-prompt-dialog";
 import { AIDisclaimer } from "@/components/ai-disclaimer";
+import { Switch } from "@/components/ui/switch";
 
 // Separate component for quiz content
 function QuizContent() {
@@ -41,6 +42,10 @@ function QuizContent() {
     const [sharedQuiz, setSharedQuiz] = useState<Question[] | null>(null);
     const [optionsCount, setOptionsCount] = useState(4);
     const [systemPrompt, setSystemPrompt] = useState<string>("");
+    const [correctAnswersCount, setCorrectAnswersCount] = useState(1);
+    const [isRandomCorrectAnswers, setIsRandomCorrectAnswers] = useState(false);
+    const [minCorrectAnswers, setMinCorrectAnswers] = useState(1);
+    const [maxCorrectAnswers, setMaxCorrectAnswers] = useState(2);
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const router = useRouter();
@@ -82,14 +87,21 @@ function QuizContent() {
     }, [searchParams, toast]);
 
     const handleSubmit = async () => {
-        submit({ 
-            input, 
-            fileContent, 
-            questionType, 
+
+        const generateParams: GenerateQuestionsParams = {
+            input,
+            fileContent,
+            questionType,
             questionCount,
             optionsCount,
-            systemPrompt, // Add this to your params
-        });
+            systemPrompt,
+            correctAnswersCount,
+            isRandomCorrectAnswers,
+            minCorrectAnswers,
+            maxCorrectAnswers,
+            output: result?.questions,
+        };
+        submit(generateParams);
     };
 
     const handleStop = () => {
@@ -141,7 +153,7 @@ function QuizContent() {
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Describe the topic you want to generate questions about..."
                 />
-                <div className="space-y-6">
+                <div className="space-y-8">
                     <div className="space-y-2">
                         <Label className="text-gray-900 dark:text-gray-100">
                             Question Type
@@ -176,16 +188,103 @@ function QuizContent() {
                         </Select>
                     </div>
                     {questionType === "multiple-choice" && (
-                        <div className="space-y-2">
-                            <Label className="text-gray-900 dark:text-gray-100">
-                                Number of Options
-                            </Label>
-                            <NumberSelector
-                                value={optionsCount}
-                                onChange={setOptionsCount}
-                                min={2}
-                                max={6}
-                            />
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <Label className="text-gray-900 dark:text-gray-100">
+                                    Number of Options
+                                </Label>
+                                <NumberSelector
+                                    value={optionsCount}
+                                    onChange={(value) => {
+                                        setOptionsCount(value);
+                                        // Ajustar los límites cuando cambia el número de opciones
+                                        if (isRandomCorrectAnswers) {
+                                            if (maxCorrectAnswers >= value) {
+                                                setMaxCorrectAnswers(value - 1);
+                                            }
+                                            if (minCorrectAnswers >= value) {
+                                                setMinCorrectAnswers(value - 1);
+                                            }
+                                        } else if (correctAnswersCount >= value) {
+                                            setCorrectAnswersCount(value - 1);
+                                        }
+                                    }}
+                                    min={2}
+                                    max={6}
+                                />
+                            </div>
+                            
+                            <div className="space-y-4 border-t pt-4 dark:border-gray-800">
+                                <div className="flex justify-between items-center">
+                                    <Label className="text-gray-900 dark:text-gray-100">
+                                        Correct Answers
+                                    </Label>
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="random-mode" className="text-sm text-gray-600 dark:text-gray-400">
+                                            Random Mode
+                                        </Label>
+                                        <Switch
+                                            id="random-mode"
+                                            checked={isRandomCorrectAnswers}
+                                            onCheckedChange={(checked) => {
+                                                setIsRandomCorrectAnswers(checked);
+                                                if (checked) {
+                                                    setMinCorrectAnswers(correctAnswersCount);
+                                                    setMaxCorrectAnswers(Math.min(correctAnswersCount + 1, optionsCount - 1));
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {isRandomCorrectAnswers ? (
+                                    <div className="space-y-2">
+                                        <Label className="text-sm">Correct Answers Range [Min, Max]</Label>
+                                        <div className="flex flex-col sm:flex-row gap-4">
+                                            <NumberSelector
+                                                value={minCorrectAnswers}
+                                                onChange={(value) => {
+                                                    setMinCorrectAnswers(value);
+                                                    if (value > maxCorrectAnswers) {
+                                                        setMaxCorrectAnswers(value);
+                                                    }
+                                                }}
+                                                min={1}
+                                                max={optionsCount - 1}
+                                            />
+                                            <span className="self-center">to</span>
+                                            <NumberSelector
+                                                value={maxCorrectAnswers}
+                                                onChange={(value) => {
+                                                    if (value <= optionsCount - 1) {
+                                                        setMaxCorrectAnswers(value);
+                                                    }
+                                                    if (value < minCorrectAnswers) {
+                                                        setMinCorrectAnswers(value);
+                                                    }
+                                                }}
+                                                min={minCorrectAnswers}
+                                                max={optionsCount - 1}
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <Label className="text-sm">Number of Correct Answers</Label>
+                                        <NumberSelector
+                                            value={correctAnswersCount}
+                                            onChange={setCorrectAnswersCount}
+                                            min={1}
+                                            max={optionsCount - 1}
+                                        />
+                                        {correctAnswersCount > 1 && (
+                                            <p className="text-xs text-amber-600 dark:text-amber-400">
+                                                Multiple correct answers enabled
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
                     <div className="space-y-2">
