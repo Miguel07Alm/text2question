@@ -12,10 +12,11 @@ export function shuffleArray<T>(array: T[]): T[] {
 export const shuffleMultipleChoiceOptions = (question: Question): Question => {
     if (question.type === "multiple-choice" && question.options) {
         const originalOptions = [...question.options];
-        const correctAnswerText =
-            originalOptions[question.correctAnswer as number];
+
+        const correctAnswersText =
+            originalOptions.filter((_, index) => (question.correctAnswer as number[]).includes(index));
         const shuffledOptions = shuffleArray([...question.options]);
-        const newCorrectAnswer = shuffledOptions.indexOf(correctAnswerText);
+        const newCorrectAnswer: number[] = correctAnswersText.map((correctAnswer) => shuffledOptions.indexOf(correctAnswer));
 
         return {
             ...question,
