@@ -1,35 +1,46 @@
-import { Question } from '@/types/types'
-import { Download } from 'lucide-react'
+import { Question } from "@/types/types";
+import { Download } from "lucide-react";
 
 interface ExportQuestionsProps {
-    questions: Question[]
+    questions: Question[];
 }
 
 export function ExportQuestions({ questions }: ExportQuestionsProps) {
     const handleExport = () => {
-        const content = questions.map((q, i) => q && `
+        const content = questions
+            .map(
+                (q, i) =>
+                    q &&
+                    `
 ${i + 1}. ${q.question}
-${q.type === 'multiple-choice' && q.options 
-    ? `Options:
-${q.options.map((opt, j) => `   ${String.fromCharCode(97 + j)}) ${opt}`).join('\n')}`
-    : ''
+${
+    q.type === "multiple-choice" && q.options
+        ? `Options:
+${q.options
+    .map((opt, j) => `   ${String.fromCharCode(97 + j)}) ${opt}`)
+    .join("\n")}`
+        : ""
 }
-Correct answer: ${q.type === 'multiple-choice' && q.options 
-    ? q.options[q.correctAnswer as number] 
-    : q.correctAnswer}
+Correct answer: ${
+                        q.type === "multiple-choice" && q.options
+                            ? q.options[q.correctAnswer as unknown as number]
+                            : q.correctAnswer
+                    }
 -------------------
-`).join('\n')
+`
+            )
+            .join("\n");
 
-        const blob = new Blob([content], { type: 'text/plain' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = 'questions-and-answers.txt'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-    }
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "questions-and-answers.txt";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
 
     return (
         <button
@@ -39,5 +50,5 @@ Correct answer: ${q.type === 'multiple-choice' && q.options
             <Download className="w-4 h-4" />
             Export questions
         </button>
-    )
+    );
 }
