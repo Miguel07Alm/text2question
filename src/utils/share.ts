@@ -15,8 +15,11 @@ interface CompactQuestion {
     q: string;          // question
     t: keyof typeof TYPE_MAP;  // type
     o?: string[];       // options (opcional)
-    a: number | string; // answer
+    a: number[] | string | boolean; // actualizado para soportar múltiples respuestas
     h?: string;         // hint (opcional)
+    c?: number;         // correctAnswersCount
+    w?: string;         // why (explicación)
+    p?: number;         // page
 }
 
 function validateQuestion(question: Question): boolean {
@@ -30,13 +33,23 @@ function validateQuestion(question: Question): boolean {
     if (question.type === 'multiple-choice') {
         if (!Array.isArray(question.options) || question.options.length === 0) return false;
         if (question.options.some(opt => typeof opt !== 'string' || opt.length > MAX_OPTION_LENGTH)) return false;
-        if (typeof question.correctAnswer !== 'number' || question.correctAnswer >= question.options.length) return false;
+        
+        // Validación para respuestas múltiples
+        if (Array.isArray(question.correctAnswer)) {
+            if (question.correctAnswer.some(ans => typeof ans !== 'number' || ans >= question.options!.length)) return false;
+            if (!question.correctAnswersCount || question.correctAnswer.length !== question.correctAnswersCount) return false;
+        } else {
+            return false; // Ahora siempre esperamos un array para multiple-choice
+        }
     }
 
     // Validar respuesta para true-false
     if (question.type === 'true-false') {
-        if (typeof question.correctAnswer !== 'string' && typeof question.correctAnswer !== 'boolean') return false;
+        if (typeof question.correctAnswer !== 'boolean') return false;
     }
+
+    // Validar why si existe
+    if (question.why && typeof question.why !== 'string') return false;
 
     return true;
 }
@@ -62,6 +75,19 @@ function compactifyQuiz(questions: Question[]): CompactQuestion[] {
             compact.h = q.hint;
         }
 
+        // Añadir nuevos campos
+        if (q.correctAnswersCount) {
+            compact.c = q.correctAnswersCount;
+        }
+
+        if (q.why) {
+            compact.w = q.why;
+        }
+
+        if (q.page) {
+            compact.p = q.page;
+        }
+
         return compact;
     }).filter((q): q is CompactQuestion => q !== null);
 }
@@ -80,6 +106,19 @@ function expandQuiz(compact: CompactQuestion[]): Question[] {
 
         if (c.h) {
             expanded.hint = c.h;
+        }
+
+        // Expandir nuevos campos
+        if (c.c !== undefined) {
+            expanded.correctAnswersCount = c.c;
+        }
+
+        if (c.w) {
+            expanded.why = c.w;
+        }
+
+        if (c.p !== undefined) {
+            expanded.page = c.p;
         }
 
         return expanded;
