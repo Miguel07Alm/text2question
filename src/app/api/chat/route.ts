@@ -25,7 +25,7 @@ export async function POST(req: Request) {
         
         console.log("🚀 ~ POST ~ typePrompt:", typePrompt);
 
-        const finalSystemPrompt = systemPrompt || `You are an expert quiz creator with years of experience in educational assessment and instructional design.
+        const finalSystemPrompt = `You are an expert quiz creator with years of experience in educational assessment and instructional design.
               Follow these principles when generating ${questionCount} questions:
               
               1. Progressive difficulty: Start with foundational concepts and gradually increase complexity
@@ -56,7 +56,10 @@ export async function POST(req: Request) {
               - The page number should be extracted from the context where the answer is found
               - If no specific page number is available, omit the page field
               
-              For example, if the answer comes from "Page 5:" in the text, set page: 5 in the response.`;
+              For example, if the answer comes from "Page 5:" in the text, set page: 5 in the response.
+              
+              Custom Behaviour: ${systemPrompt || "No custom behaviour specified."}
+              `;
 
         const result = streamObject({
             model: openai("gpt-4o-mini"),
