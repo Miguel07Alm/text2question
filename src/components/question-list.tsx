@@ -27,6 +27,8 @@ export function QuestionList({
     );
     const [isChecking, setIsChecking] = useState(false);
 
+    const [answeredCount, setAnsweredCount] = useState(0);
+
     useEffect(() => {
         setQuestions(initialQuestions);
     }, [initialQuestions]);
@@ -39,6 +41,15 @@ export function QuestionList({
             );
         }
     }, []);
+
+    useEffect(() => {
+        const answered = selectedAnswers.filter(answer => 
+            Array.isArray(answer) 
+                ? answer.length > 0 
+                : answer !== undefined
+        ).length;
+        setAnsweredCount(answered);
+    }, [selectedAnswers]);
 
     const handleSelect = (questionIndex: number, answer: number | string) => {
         setSelectedAnswers((prev) => {
@@ -205,10 +216,24 @@ export function QuestionList({
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">
-                    {showResults ? "Results" : "Questions"}
-                </h2>
+            <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 py-4 border-b border-gray-200 dark:border-gray-800 backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">
+                        {showResults ? "Results" : "Questions"}
+                    </h2>
+                    <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">Progress:</span>
+                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
+                            {answeredCount} / {questions.length} questions answered
+                        </span>
+                    </div>
+                </div>
+                <div className="mt-2 h-1 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div 
+                        className="h-full bg-blue-500 dark:bg-blue-400 transition-all duration-300"
+                        style={{ width: `${(answeredCount / questions.length) * 100}%` }}
+                    />
+                </div>
             </div>
 
             {questions.map((question, qIndex) => (
