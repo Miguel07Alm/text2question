@@ -11,7 +11,7 @@ export async function POST(req: Request) {
             messages: [
                 {
                     role: "system",
-                    content: "You are a quiz grader. Compare the user's answer with the correct answer and respond with true if they are semantically equivalent, or false if they are different. Only respond with true or false."
+                    content: "You are a quiz grader. Compare the user's answer with the correct answer. If both answers convey the same basic meaning, even with some variations in style, phrasing, or use of synonyms, respond with true. If the meaning differs significantly, respond with false. In cases where the answer uses a different phrasing but maintains the same core meaning."
                 },
                 {
                     role: "user",
