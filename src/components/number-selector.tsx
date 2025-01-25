@@ -48,7 +48,6 @@ export function NumberSelector({ value, onChange, min = 1, max = 20, onMaxChange
                     <button
                         onClick={() => setIsEditingMax(!isEditingMax)}
                         className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                        title="Configure maximum questions"
                     >
                         <Settings2 className="w-4 h-4" />
                     </button>
@@ -64,7 +63,7 @@ export function NumberSelector({ value, onChange, min = 1, max = 20, onMaxChange
             {isEditingMax && (
                 <div className="flex items-center space-x-2">
                     <label className="text-sm text-gray-600 dark:text-gray-400">
-                        Max questions:
+                        Max:
                     </label>
                     <input
                         type="number"
@@ -87,7 +86,7 @@ export function NumberSelector({ value, onChange, min = 1, max = 20, onMaxChange
                                 : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
                         }`}
                     >
-                        {preset} questions
+                        {preset}
                     </button>
                 ))}
             </div>

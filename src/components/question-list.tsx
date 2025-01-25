@@ -9,10 +9,12 @@ import { shuffleArray, shuffleMultipleChoiceOptions } from "@/utils/array";
 
 interface QuestionListProps {
     questions: Question[];
+    timeLimit?: number | null; // hacer el tiempo opcional
 }
 
 export function QuestionList({
     questions: initialQuestions,
+    timeLimit = null, // valor por defecto null
 }: QuestionListProps) {
     console.log("🚀 ~ initialQuestions:", JSON.stringify(initialQuestions))
     const [questions, setQuestions] = useState(initialQuestions);
@@ -28,6 +30,12 @@ export function QuestionList({
     const [isChecking, setIsChecking] = useState(false);
 
     const [answeredCount, setAnsweredCount] = useState(0);
+    const [startTime, setStartTime] = useState<Date | null>(null);
+    const [endTime, setEndTime] = useState<Date | null>(null);
+    const [elapsedTime, setElapsedTime] = useState<string>("00:00");
+    const [timeRemaining, setTimeRemaining] = useState(timeLimit ? timeLimit * 60 : 0); // convertir a segundos
+    const [isPenalized, setIsPenalized] = useState(false);
+    const [autoSubmitWarning, setAutoSubmitWarning] = useState(false);
 
     useEffect(() => {
         setQuestions(initialQuestions);
@@ -50,6 +58,44 @@ export function QuestionList({
         ).length;
         setAnsweredCount(answered);
     }, [selectedAnswers]);
+
+    // Iniciar el temporizador cuando se monta el componente
+    useEffect(() => {
+        setStartTime(new Date());
+    }, []);
+
+    // Actualizar el tiempo transcurrido cada segundo
+    useEffect(() => {
+        if (!timeLimit) return;
+        if (!startTime || endTime) return;
+
+        const timer = setInterval(() => {
+            const now = new Date();
+            const diff = now.getTime() - startTime.getTime();
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            setElapsedTime(
+                `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+            );
+
+            // Actualizar tiempo restante
+            const remaining = (timeLimit * 60) - Math.floor(diff / 1000);
+            setTimeRemaining(remaining);
+
+            // Mostrar advertencia cuando quedan 60 segundos
+            if (remaining === 60) {
+                setAutoSubmitWarning(true);
+            }
+
+            // Auto-submit cuando se acaba el tiempo
+            if (remaining <= 0) {
+                clearInterval(timer);
+                handleTimeUp();
+            }
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [startTime, endTime, timeLimit]);
 
     const handleSelect = (questionIndex: number, answer: number | string) => {
         setSelectedAnswers((prev) => {
@@ -163,12 +209,18 @@ export function QuestionList({
 
     const handleCheckAnswers = async () => {
         setIsChecking(true);
+        setEndTime(new Date()); // Guardar tiempo final
         const results = await Promise.all(
             questions.map((_, index) => checkAnswer(index))
         );
         setAnswerResults(results);
         setShowResults(true);
         setIsChecking(false);
+    };
+
+    const handleTimeUp = async () => {
+        setIsPenalized(true);
+        await handleCheckAnswers();
     };
 
     const toggleHint = (index: number) => {
@@ -188,6 +240,9 @@ export function QuestionList({
         setShowResults(false);
         setAnswerResults(new Array(questions.length).fill(false));
         setShowHint([]);
+        setStartTime(new Date()); // Reiniciar tiempo
+        setEndTime(null);
+        setElapsedTime("00:00");
     };
 
     const getFormattedAnswers = (question: Question, correctAnswers: number[]) => {
@@ -214,6 +269,31 @@ export function QuestionList({
         return `${baseStyle} ${isMultiple ? multipleStyle : singleStyle} rounded-lg`;
     };
 
+    const calculatePercentage = (correct: number, total: number) => {
+        return Math.round((correct / total) * 100);
+    };
+
+    const formatTimeSpent = (startTime: Date, endTime: Date) => {
+        const diff = endTime.getTime() - startTime.getTime();
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        return `${minutes}m ${seconds}s`;
+    };
+
+    const formatTimeRemaining = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    };
+
+    const calculateFinalScore = (correctCount: number, totalQuestions: number) => {
+        const baseScore = (correctCount / totalQuestions) * 100;
+        if (isPenalized) {
+            return Math.max(0, baseScore - 10); // Penalización del 10%
+        }
+        return baseScore;
+    };
+
     return (
         <div className="space-y-8">
             <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 py-4 border-b border-gray-200 dark:border-gray-800 backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90">
@@ -221,11 +301,25 @@ export function QuestionList({
                     <h2 className="text-xl font-semibold">
                         {showResults ? "Results" : "Questions"}
                     </h2>
-                    <div className="flex items-center gap-2 text-sm">
-                        <span className="font-medium">Progress:</span>
-                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
-                            {answeredCount} / {questions.length} questions answered
-                        </span>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 text-sm">
+                            <span className="font-medium">Progress:</span>
+                            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
+                                {answeredCount} / {questions.length}
+                            </span>
+                        </div>
+                        {timeLimit && ( // Solo mostrar el temporizador si hay timeLimit
+                            <div className="flex items-center gap-2 text-sm">
+                                <span className="font-medium">Time Left:</span>
+                                <span className={`px-2 py-1 rounded-md font-mono
+                                    ${timeRemaining <= 60 
+                                        ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 animate-pulse' 
+                                        : 'bg-gray-100 dark:bg-gray-800'}`}
+                                >
+                                    {formatTimeRemaining(timeRemaining)}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div className="mt-2 h-1 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
@@ -235,6 +329,13 @@ export function QuestionList({
                     />
                 </div>
             </div>
+
+            {timeLimit && autoSubmitWarning && timeRemaining > 0 && !showResults && (
+                <div className="fixed bottom-4 right-4 bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 p-4 rounded-lg shadow-lg animate-bounce">
+                    <p className="font-medium">⚠️ 1 minute remaining!</p>
+                    <p className="text-sm">Quiz will be automatically submitted when time runs out.</p>
+                </div>
+            )}
 
             {questions.map((question, qIndex) => (
                 <div
@@ -556,14 +657,49 @@ export function QuestionList({
             )}
 
             {showResults && (
-                <div className="space-y-4">
-                    <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
-                        <h3 className="text-lg font-medium mb-2">Summary</h3>
-                        <p>
-                            Correct:{" "}
-                            {answerResults.filter((result) => result).length}{" "}
-                            out of {questions.length}
-                        </p>
+                <div className="space-y-6">
+                    <div className="p-8 rounded-3xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
+                        <div className="space-y-6">
+                            <h3 className="text-2xl font-medium text-gray-900 dark:text-gray-100">
+                                Quiz Complete
+                            </h3>
+                            <div className="flex items-end gap-4">
+                                <span className="text-6xl font-semibold text-gray-900 dark:text-gray-100">
+                                    {calculateFinalScore(
+                                        answerResults.filter((result) => result).length,
+                                        questions.length
+                                    ).toFixed(1)}%
+                                </span>
+                                <div className="mb-2 space-y-1">
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        Accuracy
+                                    </p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                                        {answerResults.filter((result) => result).length} correct answers
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 transition-all duration-500 ease-out"
+                                    style={{ 
+                                        width: `${calculatePercentage(
+                                            answerResults.filter((result) => result).length,
+                                            questions.length
+                                        )}%` 
+                                    }}
+                                />
+                            </div>
+                            <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                                <span>Total Questions: {questions.length}</span>
+                                <span>Time Spent: {startTime && endTime ? formatTimeSpent(startTime, endTime) : elapsedTime}</span>
+                            </div>
+                            {isPenalized && (
+                                <div className="text-sm text-red-600 dark:text-red-400">
+                                    10% penalty applied for exceeding time limit
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <Submit
                         onClick={handleRetakeQuiz}

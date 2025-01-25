@@ -19,13 +19,31 @@ Text2Question generates quiz questions from any given text. Users can upload tex
   - True/False
   - Short answer
   - Mixed mode
+- ⏱️ Quiz Timer Features:
+  - Optional time limits for quizzes
+  - Configurable duration (5-120 minutes)
+  - Visual countdown timer
+  - Auto-submit when time expires
+  - Time penalties (-10% score)
+  - Warning notifications
+  - Time tracking and reporting
+- 📊 Advanced Results:
+  - Detailed scoring analysis
+  - Time spent tracking
+  - Penalties visualization
+  - Progress indicators
+  - Beautiful PDF exports
 - 📚 File upload support with page reference tracking
 - 🎨 Dark/Light mode
 - 💡 Hint system for questions
 - 📖 Detailed explanations for each answer
 - 📄 Page references for questions from PDFs
 - ✨ Real-time answer verification
-- 📤 Export functionality
+- 📤 Export functionality:
+  - PDF export with styling
+  - Theme-aware exports
+  - Multi-page support
+  - High-quality rendering
 - 🔀 Random question and answer shuffling
 - 🔗 Share quizzes via URL
 - 🔄 Retake quizzes with new random order
@@ -37,6 +55,8 @@ Text2Question generates quiz questions from any given text. Users can upload tex
   - Custom number of options (2-6) for multiple choice
   - Advanced system prompt editing
   - Persistent user preferences
+  - Timer configuration
+  - Export settings
 
 ## How It Works
 
@@ -80,6 +100,32 @@ Text2Question generates quiz questions from any given text. Users can upload tex
 - Even distribution across specified range
 - Real-time selection counter and limits
 
+### Timer System
+
+The quiz system includes a comprehensive timer feature:
+
+1. Configuration:
+   - Enable/disable timer for each quiz
+   - Set custom duration (5-120 minutes)
+   - Visual countdown display
+
+2. During Quiz:
+   - Real-time countdown
+   - Progress tracking
+   - Warning notifications
+   - Auto-submit functionality
+
+3. Scoring System:
+   - Time-based penalties
+   - -10% score reduction for timeout
+   - Time spent tracking
+   - Detailed time statistics in results
+
+4. User Experience:
+   - Visual countdown timer
+   - Last minute warnings
+   - Graceful timeout handling
+   - Time tracking in exports
 
 ### AI Behavior
 

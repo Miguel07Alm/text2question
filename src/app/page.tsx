@@ -46,6 +46,8 @@ function QuizContent() {
     const [isRandomCorrectAnswers, setIsRandomCorrectAnswers] = useState(false);
     const [minCorrectAnswers, setMinCorrectAnswers] = useState(1);
     const [maxCorrectAnswers, setMaxCorrectAnswers] = useState(2);
+    const [isTimeLimitEnabled, setIsTimeLimitEnabled] = useState(false);
+    const [quizTimeLimit, setQuizTimeLimit] = useState(30);
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const router = useRouter();
@@ -299,6 +301,27 @@ function QuizContent() {
                             onMaxChange={setMaxQuestions}
                         />
                     </div>
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-gray-900 dark:text-gray-100">
+                                Time Limit
+                            </Label>
+                            <Switch
+                                id="enable-time-limit"
+                                checked={isTimeLimitEnabled}
+                                onCheckedChange={setIsTimeLimitEnabled}
+                            />
+                        </div>
+                        {isTimeLimitEnabled && (
+                            <NumberSelector
+                                value={quizTimeLimit}
+                                onChange={setQuizTimeLimit}
+                                min={5}
+                                max={120}
+                                className="mt-2"
+                            />
+                        )}
+                    </div>
                 </div>
                 {isLoading ? (
                     <Submit
@@ -335,6 +358,7 @@ function QuizContent() {
                             </div>
                             <QuestionList
                                 questions={result.questions as Question[]}
+                                timeLimit={isTimeLimitEnabled ? quizTimeLimit : null}
                             />
                         </div>
                     )}
