@@ -144,6 +144,4 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 You can access the deployed application at the following URL:
 
-[https://text2question.vercel.app](https://text2question.miguel07code.dev)
-```
-
+[https://text2question.miguel07code.dev](https://text2question.miguel07code.dev)
