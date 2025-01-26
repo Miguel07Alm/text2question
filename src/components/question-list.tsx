@@ -297,8 +297,7 @@ export function QuestionList({
     return (
         <div className="space-y-8">
             <div className="sticky top-0 z-10 py-4 border-b backdrop-blur-sm bg-opacity-90 bg-white dark:bg-gray-900 rounded-md">
-                {/* Header para pantallas pequeñas */}
-                <div className="md:hidden space-y-4">
+                <div className="md:hidden space-y-4 mx-2">
                     <h2 className="text-xl font-semibold text-center">
                         {showResults ? "Results" : "Questions"}
                     </h2>
@@ -324,8 +323,7 @@ export function QuestionList({
                     </div>
                 </div>
 
-                {/* Header para pantallas medianas y grandes */}
-                <div className="hidden md:block">
+                <div className="hidden md:block mx-2">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-semibold">
                             {showResults ? "Results" : "Questions"}
@@ -353,7 +351,6 @@ export function QuestionList({
                     </div>
                 </div>
 
-                {/* Barra de progreso común para ambos layouts */}
                 <div className="mt-2 h-1 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
                     <div 
                         className="h-full bg-blue-500 dark:bg-blue-400 transition-all duration-300"
