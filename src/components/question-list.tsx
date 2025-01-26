@@ -296,21 +296,22 @@ export function QuestionList({
 
     return (
         <div className="space-y-8">
-            <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 py-4 border-b border-gray-200 dark:border-gray-800 backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold">
+            <div className="sticky top-0 z-10 py-4 border-b backdrop-blur-sm bg-opacity-90 bg-white dark:bg-gray-900 rounded-md">
+                {/* Header para pantallas pequeñas */}
+                <div className="md:hidden space-y-4">
+                    <h2 className="text-xl font-semibold text-center">
                         {showResults ? "Results" : "Questions"}
                     </h2>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
                         <div className="flex items-center gap-2 text-sm">
                             <span className="font-medium">Progress:</span>
                             <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
                                 {answeredCount} / {questions.length}
                             </span>
                         </div>
-                        {timeLimit && ( // Solo mostrar el temporizador si hay timeLimit
+                        {timeLimit && (
                             <div className="flex items-center gap-2 text-sm">
-                                <span className="font-medium">Time Left:</span>
+                                <span className="font-medium">Time:</span>
                                 <span className={`px-2 py-1 rounded-md font-mono
                                     ${timeRemaining <= 60 
                                         ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 animate-pulse' 
@@ -322,6 +323,37 @@ export function QuestionList({
                         )}
                     </div>
                 </div>
+
+                {/* Header para pantallas medianas y grandes */}
+                <div className="hidden md:block">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-semibold">
+                            {showResults ? "Results" : "Questions"}
+                        </h2>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-sm">
+                                <span className="font-medium">Progress:</span>
+                                <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
+                                    {answeredCount} / {questions.length}
+                                </span>
+                            </div>
+                            {timeLimit && (
+                                <div className="flex items-center gap-2 text-sm">
+                                    <span className="font-medium">Time Left:</span>
+                                    <span className={`px-2 py-1 rounded-md font-mono
+                                        ${timeRemaining <= 60 
+                                            ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 animate-pulse' 
+                                            : 'bg-gray-100 dark:bg-gray-800'}`}
+                                    >
+                                        {formatTimeRemaining(timeRemaining)}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Barra de progreso común para ambos layouts */}
                 <div className="mt-2 h-1 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
                     <div 
                         className="h-full bg-blue-500 dark:bg-blue-400 transition-all duration-300"
