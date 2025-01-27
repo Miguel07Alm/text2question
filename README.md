@@ -154,6 +154,7 @@ Create a `.env.local` file in the root directory with the following content:
 
 ```
 OPENAI_API_KEY=your_openai_api_key
+DEEPSEEK_API_KEY=your_deepseek_api_key
 ```
 
 ## Getting Started
