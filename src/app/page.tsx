@@ -37,6 +37,7 @@ function QuizContent() {
     const [questionType, setQuestionType] = useState<
         "multiple-choice" | "true-false" | "short-answer" | "mixed"
     >("mixed");
+    const [selectedModel, setSelectedModel] = useState<"deepseek" | "openai">("deepseek");
     const [questionCount, setQuestionCount] = useState(5);
     const [maxQuestions, setMaxQuestions] = useState(20);
     const [sharedQuiz, setSharedQuiz] = useState<Question[] | null>(null);
@@ -102,6 +103,7 @@ function QuizContent() {
             minCorrectAnswers,
             maxCorrectAnswers,
             output: result?.questions,
+            model: selectedModel, // Add model selection
         };
         submit(generateParams);
     };
@@ -148,6 +150,25 @@ function QuizContent() {
             <h2 className="text-2xl font-semibold mb-4 text-center text-gray-700 dark:text-gray-300">
                 Generate quiz questions from any given text using AI.
             </h2>
+            <div className="space-y-2">
+                <Label className="text-gray-900 dark:text-gray-100">
+                    AI Model
+                </Label>
+                <Select
+                    onValueChange={(value) =>
+                        setSelectedModel(value as "deepseek" | "openai")
+                    }
+                    value={selectedModel}
+                >
+                    <SelectTrigger className="w-[180px] bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+                        <SelectValue placeholder="Select model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="deepseek">Deepseek Chat</SelectItem>
+                        <SelectItem value="openai">GPT-4o-mini</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
             <div className="space-y-8">
                 <FileUpload onFileContent={setFileContent} />
                 <ExpandedTextarea
@@ -156,38 +177,40 @@ function QuizContent() {
                     placeholder="Describe the topic you want to generate questions about..."
                 />
                 <div className="space-y-8">
-                    <div className="space-y-2">
-                        <Label className="text-gray-900 dark:text-gray-100">
-                            Question Type
-                        </Label>
-                        <Select
-                            onValueChange={(value) =>
-                                setQuestionType(
-                                    value as
-                                        | "multiple-choice"
-                                        | "true-false"
-                                        | "short-answer"
-                                        | "mixed"
-                                )
-                            }
-                            value={questionType}
-                        >
-                            <SelectTrigger className="w-[180px] bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-                                <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="multiple-choice">
-                                    Multiple Choice
-                                </SelectItem>
-                                <SelectItem value="true-false">
-                                    True/False
-                                </SelectItem>
-                                <SelectItem value="short-answer">
-                                    Short Answer
-                                </SelectItem>
-                                <SelectItem value="mixed">Mixed</SelectItem>
-                            </SelectContent>
-                        </Select>
+                    <div className="flex gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-gray-900 dark:text-gray-100">
+                                Question Type
+                            </Label>
+                            <Select
+                                onValueChange={(value) =>
+                                    setQuestionType(
+                                        value as
+                                            | "multiple-choice"
+                                            | "true-false"
+                                            | "short-answer"
+                                            | "mixed"
+                                    )
+                                }
+                                value={questionType}
+                            >
+                                <SelectTrigger className="w-[180px] bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+                                    <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="multiple-choice">
+                                        Multiple Choice
+                                    </SelectItem>
+                                    <SelectItem value="true-false">
+                                        True/False
+                                    </SelectItem>
+                                    <SelectItem value="short-answer">
+                                        Short Answer
+                                    </SelectItem>
+                                    <SelectItem value="mixed">Mixed</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                     {questionType === "multiple-choice" && (
                         <div className="space-y-6">
@@ -207,7 +230,9 @@ function QuizContent() {
                                             if (minCorrectAnswers >= value) {
                                                 setMinCorrectAnswers(value - 1);
                                             }
-                                        } else if (correctAnswersCount >= value) {
+                                        } else if (
+                                            correctAnswersCount >= value
+                                        ) {
                                             setCorrectAnswersCount(value - 1);
                                         }
                                     }}
@@ -215,24 +240,37 @@ function QuizContent() {
                                     max={6}
                                 />
                             </div>
-                            
+
                             <div className="space-y-4 border-t pt-4 dark:border-gray-800">
                                 <div className="flex justify-between items-center">
                                     <Label className="text-gray-900 dark:text-gray-100">
                                         Correct Answers
                                     </Label>
                                     <div className="flex items-center gap-2">
-                                        <Label htmlFor="random-mode" className="text-sm text-gray-600 dark:text-gray-400">
+                                        <Label
+                                            htmlFor="random-mode"
+                                            className="text-sm text-gray-600 dark:text-gray-400"
+                                        >
                                             Random Mode
                                         </Label>
                                         <Switch
                                             id="random-mode"
                                             checked={isRandomCorrectAnswers}
                                             onCheckedChange={(checked) => {
-                                                setIsRandomCorrectAnswers(checked);
+                                                setIsRandomCorrectAnswers(
+                                                    checked
+                                                );
                                                 if (checked) {
-                                                    setMinCorrectAnswers(correctAnswersCount);
-                                                    setMaxCorrectAnswers(Math.min(correctAnswersCount + 1, optionsCount - 1));
+                                                    setMinCorrectAnswers(
+                                                        correctAnswersCount
+                                                    );
+                                                    setMaxCorrectAnswers(
+                                                        Math.min(
+                                                            correctAnswersCount +
+                                                                1,
+                                                            optionsCount - 1
+                                                        )
+                                                    );
                                                 }
                                             }}
                                         />
@@ -241,28 +279,47 @@ function QuizContent() {
 
                                 {isRandomCorrectAnswers ? (
                                     <div className="space-y-2">
-                                        <Label className="text-sm">Correct Answers Range [Min, Max]</Label>
+                                        <Label className="text-sm">
+                                            Correct Answers Range [Min, Max]
+                                        </Label>
                                         <div className="flex flex-col sm:flex-row gap-4">
                                             <NumberSelector
                                                 value={minCorrectAnswers}
                                                 onChange={(value) => {
                                                     setMinCorrectAnswers(value);
-                                                    if (value > maxCorrectAnswers) {
-                                                        setMaxCorrectAnswers(value);
+                                                    if (
+                                                        value >
+                                                        maxCorrectAnswers
+                                                    ) {
+                                                        setMaxCorrectAnswers(
+                                                            value
+                                                        );
                                                     }
                                                 }}
                                                 min={1}
                                                 max={optionsCount - 1}
                                             />
-                                            <span className="self-center">to</span>
+                                            <span className="self-center">
+                                                to
+                                            </span>
                                             <NumberSelector
                                                 value={maxCorrectAnswers}
                                                 onChange={(value) => {
-                                                    if (value <= optionsCount - 1) {
-                                                        setMaxCorrectAnswers(value);
+                                                    if (
+                                                        value <=
+                                                        optionsCount - 1
+                                                    ) {
+                                                        setMaxCorrectAnswers(
+                                                            value
+                                                        );
                                                     }
-                                                    if (value < minCorrectAnswers) {
-                                                        setMinCorrectAnswers(value);
+                                                    if (
+                                                        value <
+                                                        minCorrectAnswers
+                                                    ) {
+                                                        setMinCorrectAnswers(
+                                                            value
+                                                        );
                                                     }
                                                 }}
                                                 min={minCorrectAnswers}
@@ -272,7 +329,9 @@ function QuizContent() {
                                     </div>
                                 ) : (
                                     <div className="space-y-2">
-                                        <Label className="text-sm">Number of Correct Answers</Label>
+                                        <Label className="text-sm">
+                                            Number of Correct Answers
+                                        </Label>
                                         <NumberSelector
                                             value={correctAnswersCount}
                                             onChange={setCorrectAnswersCount}
@@ -358,7 +417,9 @@ function QuizContent() {
                             </div>
                             <QuestionList
                                 questions={result.questions as Question[]}
-                                timeLimit={isTimeLimitEnabled ? quizTimeLimit : null}
+                                timeLimit={
+                                    isTimeLimitEnabled ? quizTimeLimit : null
+                                }
                             />
                         </div>
                     )}

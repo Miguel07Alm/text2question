@@ -9,6 +9,10 @@ Text2Question generates quiz questions from any given text. Users can upload tex
 ## Features
 
 - 🤖 AI-powered question generation
+  - Multiple AI model support:
+    - Deepseek Chat (default)
+    - OpenAI GPT-4
+  - Configurable model selection
 - 📝 Multiple question types:
   - Multiple choice (with configurable number of options):
     - Support for multiple correct answers

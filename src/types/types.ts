@@ -42,6 +42,7 @@ export type GenerateQuestionsParams = {
     isRandomCorrectAnswers?: boolean;
     minCorrectAnswers?: number;
     maxCorrectAnswers?: number;
+    model: "deepseek" | "openai";
     output?:
         | (
               | DeepPartial<{
