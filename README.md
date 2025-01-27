@@ -191,3 +191,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 You can access the deployed application at the following URL:
 
 [https://text2question.miguel07code.dev](https://text2question.miguel07code.dev)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
