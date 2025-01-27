@@ -37,7 +37,7 @@ function QuizContent() {
     const [questionType, setQuestionType] = useState<
         "multiple-choice" | "true-false" | "short-answer" | "mixed"
     >("mixed");
-    const [selectedModel, setSelectedModel] = useState<"deepseek" | "openai">("deepseek");
+    const [selectedModel, setSelectedModel] = useState<"deepseek" | "openai">("openai");
     const [questionCount, setQuestionCount] = useState(5);
     const [maxQuestions, setMaxQuestions] = useState(20);
     const [sharedQuiz, setSharedQuiz] = useState<Question[] | null>(null);
