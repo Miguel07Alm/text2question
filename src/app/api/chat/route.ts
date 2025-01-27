@@ -126,7 +126,7 @@ export async function POST(req: Request) {
         return result.toTextStreamResponse();
         } else {
             const result = streamObject({
-                // @ts-expect-error deepseek is supported but it appears as an error
+                // @ts-ignore
                 model: deepseek("deepseek-chat"),
                 schema: QuestionSchema,
                 messages: [
