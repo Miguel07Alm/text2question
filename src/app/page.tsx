@@ -58,10 +58,12 @@ function QuizContent() {
         object: result,
         submit,
         stop,
+        error
     } = useObject({
         api: "/api/chat",
         schema: QuestionSchema,
     });
+    console.log(`Error: ${error}`)
 
     useEffect(() => {
         const quizParam = searchParams.get("quiz");
@@ -392,15 +394,23 @@ function QuizContent() {
                         Stop Generation
                     </Submit>
                 ) : (
-                    <Submit
-                        onClick={handleSubmit}
-                        loading={isLoading}
-                        disabled={!input && !fileContent}
-                        primaryColor={"black"}
-                        foregroundColor={"white"}
-                    >
-                        Generate Questions
-                    </Submit>
+                    <>
+                        {error && (
+                            <div className="p-4 mb-4 text-sm border rounded-lg bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
+                                <div className="font-medium mb-1">Error generating questions:</div>
+                                <div className="opacity-90">{error.message}</div>
+                            </div>
+                        )}
+                        <Submit
+                            onClick={handleSubmit}
+                            loading={isLoading}
+                            disabled={!input && !fileContent}
+                            primaryColor={"black"}
+                            foregroundColor={"white"}
+                        >
+                            Generate Questions
+                        </Submit>
+                    </>
                 )}
                 {result &&
                     Array.isArray(result.questions) &&
