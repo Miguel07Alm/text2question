@@ -58,12 +58,11 @@ function QuizContent() {
         object: result,
         submit,
         stop,
-        error
+        error,
     } = useObject({
         api: "/api/chat",
         schema: QuestionSchema,
     });
-    console.log(`Error: ${error}`)
 
     useEffect(() => {
         const quizParam = searchParams.get("quiz");
@@ -397,8 +396,12 @@ function QuizContent() {
                     <>
                         {error && (
                             <div className="p-4 mb-4 text-sm border rounded-lg bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
-                                <div className="font-medium mb-1">Error generating questions:</div>
-                                <div className="opacity-90">{error.message}</div>
+                                <div className="font-medium mb-1">
+                                    Error generating questions:
+                                </div>
+                                <div className="opacity-90">
+                                    {error.message}
+                                </div>
                             </div>
                         )}
                         <Submit
@@ -434,7 +437,7 @@ function QuizContent() {
                         </div>
                     )}
             </div>
-            <footer className="mt-12 flex justify-center items-center">
+            <footer className="mt-12 flex justify-center items-center gap-4">
                 <a
                     href="https://github.com/Miguel07Alm/text2question"
                     target="_blank"
@@ -443,6 +446,14 @@ function QuizContent() {
                 >
                     <GithubIcon className="w-6 h-6" />
                     <span className="font-semibold">View on GitHub</span>
+                </a>
+                <a
+                    href="https://buymeacoffee.com/miguelangeyx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#FF5E5B] hover:bg-[#FF5E5B]/90 text-white transition-colors duration-200 shadow-lg"
+                >
+                    <span className="font-semibold">☕ Buy me a coffee</span>
                 </a>
             </footer>
         </main>
