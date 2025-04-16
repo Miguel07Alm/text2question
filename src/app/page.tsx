@@ -30,7 +30,7 @@ import { SystemPromptDialog } from "@/components/system-prompt-dialog";
 import { AIDisclaimer } from "@/components/ai-disclaimer";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 
 // Separate component for quiz content
 function QuizContent() {
@@ -54,6 +54,7 @@ function QuizContent() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const router = useRouter();
+    const {data: session} = useSession();
 
     const {
         isLoading,
@@ -425,7 +426,7 @@ function QuizContent() {
                                                 ); // Time in minutes
                                                 return (
                                                     <>
-                                                        <p>You&apos;ve reached the daily generation limit ({parsedError.limit}) for anonymous users.</p>
+                                                        <p>You&apos;ve reached the daily generation limit ({parsedError.limit}) for {session?.user ? "registered": "anonymous" } users.</p>
                                                         <p>Please try again after {resetTime.toLocaleTimeString()}.</p>
                                                         <div className="pt-2">
                                                             <Button size="sm" variant="outline" onClick={() => signIn("google")}>
