@@ -7,6 +7,11 @@ import { Question } from "@/types/types";
 import { CheckCircle, XCircle, HelpCircle, Check } from "lucide-react";
 import { shuffleArray, shuffleMultipleChoiceOptions } from "@/utils/array";
 
+interface ShortAnswerResult {
+    score: number | null;
+    reason: string | null;
+}
+
 interface QuestionListProps {
     questions: Question[];
     timeLimit?: number | null; // hacer el tiempo opcional
@@ -25,7 +30,11 @@ export function QuestionList({
     const [showResults, setShowResults] = useState(false);
     const [showHint, setShowHint] = useState<number[]>([]);
     const [answerResults, setAnswerResults] = useState<boolean[]>(
-        new Array(questions.length).fill(false)
+        new Array(initialQuestions.length).fill(false)
+    );
+    // New state for short answer details
+    const [shortAnswerDetails, setShortAnswerDetails] = useState<Record<number, ShortAnswerResult>>(
+        {}
     );
     const [isChecking, setIsChecking] = useState(false);
 
@@ -51,10 +60,10 @@ export function QuestionList({
     }, []);
 
     useEffect(() => {
-        const answered = selectedAnswers.filter(answer => 
-            Array.isArray(answer) 
-                ? answer.length > 0 
-                : answer !== undefined
+        const answered = selectedAnswers.filter(answer =>
+            Array.isArray(answer)
+                ? answer.length > 0
+                : answer !== undefined && answer !== '' // Consider empty string as unanswered for short-answer
         ).length;
         setAnsweredCount(answered);
     }, [selectedAnswers]);
@@ -104,7 +113,7 @@ export function QuestionList({
 
             if (question.type === "multiple-choice") {
                 // Inicializar el array de respuestas para esta pregunta
-                let currentAnswers = Array.isArray(newAnswers[questionIndex]) 
+                let currentAnswers = Array.isArray(newAnswers[questionIndex])
                     ? newAnswers[questionIndex] as number[]
                     : [];
 
@@ -143,29 +152,57 @@ export function QuestionList({
         });
     };
 
+    // Helper function to call the API for checking short answers
     const checkShortAnswer = async (
+        questionIndex: number, // Add index to store results
         userAnswer: string,
         correctAnswer: string
-    ) => {
+    ): Promise<boolean> => {
+        // Handle empty user answer
+        if (!userAnswer || userAnswer.trim() === "") {
+            setShortAnswerDetails(prev => ({ ...prev, [questionIndex]: { score: 0, reason: "No answer provided." } }));
+            return false;
+        }
         try {
             const response = await fetch("/api/check-answer", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userAnswer, correctAnswer }),
             });
-            const { isCorrect } = await response.json();
+            if (!response.ok) {
+                console.error("API Error:", response.statusText);
+                const errorText = await response.text();
+                setShortAnswerDetails(prev => ({ ...prev, [questionIndex]: { score: null, reason: `API Error: ${response.statusText} - ${errorText}` } }));
+                return false; // Treat API errors as incorrect
+            }
+            const data = await response.json();
+            if (data.error) {
+                console.error("API Error Message:", data.error);
+                setShortAnswerDetails(prev => ({ ...prev, [questionIndex]: { score: null, reason: `API Error: ${data.error}` } }));
+                return false;
+            }
+
+            const { score, reason } = data as { score: number; reason: string };
+            // Store score and reason
+            setShortAnswerDetails(prev => ({ ...prev, [questionIndex]: { score, reason } }));
+
+            // Determine correctness based on score threshold (e.g., >= 75)
+            const isCorrect = score >= 75;
             return isCorrect;
+
         } catch (error) {
             console.error("Error checking short answer:", error);
-            return false;
+            setShortAnswerDetails(prev => ({ ...prev, [questionIndex]: { score: null, reason: `Client Error: ${error instanceof Error ? error.message : String(error)}` } }));
+            return false; // Treat network or other errors as incorrect
         }
     };
 
-    const checkAnswer = async (questionIndex: number) => {
+    // Function to check a single answer, now async
+    const checkAnswer = async (questionIndex: number): Promise<boolean> => {
         const question = questions[questionIndex];
         const selectedAnswer = selectedAnswers[questionIndex];
 
-        if (!question) return false;
+        if (!question || selectedAnswer === undefined) return false;
 
         if (question.type === "multiple-choice") {
             const correctAnswers = (
@@ -176,46 +213,66 @@ export function QuestionList({
 
             const selected = (Array.isArray(selectedAnswer)
                 ? selectedAnswer
-                : [selectedAnswer]) as number[];
+                : [selectedAnswer]) as (number | undefined)[]; // Allow undefined
+
+            // Filter out undefined values before comparison
+            const validSelected = selected.filter(s => s !== undefined) as number[];
+
+            // Ensure selected answers are sorted for consistent comparison
+            validSelected.sort((a, b) => a - b);
+            const sortedCorrectAnswers = [...correctAnswers].sort((a, b) => a - b);
 
             return (
-                correctAnswers.length === selected.length &&
-                correctAnswers.every((answer) =>
-                    selected.includes(answer)
+                sortedCorrectAnswers.length === validSelected.length &&
+                sortedCorrectAnswers.every((answer, index) =>
+                    answer === validSelected[index]
                 )
             );
         }
 
         if (question.type === "true-false") {
+            // Ensure correctAnswer is treated as a boolean string if necessary
+            const correctAnswerBool = typeof question.correctAnswer === 'boolean'
+                ? String(question.correctAnswer)
+                : String(question.correctAnswer).toLowerCase();
+
             return (
-                String(selectedAnswer).toLowerCase() ===
-                String(question.correctAnswer).toLowerCase()
+                String(selectedAnswer).toLowerCase() === correctAnswerBool
             );
         }
 
         if (question.type === "short-answer") {
+            // Call the async helper function, passing the index
             return await checkShortAnswer(
+                questionIndex, // Pass index here
                 String(selectedAnswer),
-                String(question.correctAnswer)
+                String(question.correctAnswer) // Ensure correctAnswer is a string
             );
         }
-        console.log(
-            "🚀 ~ checkAnswer ~ question.correctAnswer:",
-            question.correctAnswer
-        );
-        console.log("🚀 ~ checkAnswer ~ selectedAnswer:", selectedAnswer);
-        return selectedAnswer === question.correctAnswer;
+
+        // Fallback for unexpected types (should not happen with current types)
+        console.warn("Unsupported question type for checking:", question.type);
+        return false;
     };
 
+    // Updated to handle async checkAnswer
     const handleCheckAnswers = async () => {
         setIsChecking(true);
         setEndTime(new Date()); // Guardar tiempo final
-        const results = await Promise.all(
-            questions.map((_, index) => checkAnswer(index))
-        );
-        setAnswerResults(results);
-        setShowResults(true);
-        setIsChecking(false);
+        // Reset short answer details before checking
+        setShortAnswerDetails({});
+        try {
+            const results = await Promise.all(
+                questions.map((_, index) => checkAnswer(index))
+            );
+            setAnswerResults(results);
+            setShowResults(true);
+        } catch (error) {
+            console.error("Error during answer checking:", error);
+            // Handle potential errors during Promise.all, e.g., show a general error message
+        } finally {
+            setIsChecking(false);
+        }
     };
 
     const handleTimeUp = async () => {
@@ -240,22 +297,30 @@ export function QuestionList({
         setShowResults(false);
         setAnswerResults(new Array(questions.length).fill(false));
         setShowHint([]);
+        setShortAnswerDetails({}); // Reset short answer details on retake
         setStartTime(new Date()); // Reiniciar tiempo
         setEndTime(null);
         setElapsedTime("00:00");
+        setTimeRemaining(timeLimit ? timeLimit * 60 : 0); // Reset timer
+        setIsPenalized(false);
+        setAutoSubmitWarning(false);
     };
 
     const getFormattedAnswers = (question: Question, correctAnswers: number[]) => {
         if (!question.options) return '';
-        
+
         if (correctAnswers.length === 1) {
-            return question.options[correctAnswers[0]];
+            // Ensure the index is valid before accessing the option
+            return correctAnswers[0] >= 0 && correctAnswers[0] < question.options.length
+                ? question.options[correctAnswers[0]]
+                : 'Invalid Answer Index';
         }
 
         return correctAnswers
-            .map((index) => `• ${question.options![index]}`)
-            .join('\n');
+            .map((index) => index >= 0 && index < question.options!.length ? `• ${question.options![index]}` : '• Invalid Answer Index')
+            .join('\n'); // Corrected newline character
     };
+
 
     const getSelectionStyle = (isSelected: boolean, isMultiple: boolean) => {
         const baseStyle = "absolute inset-0 transition-all duration-200";
@@ -263,17 +328,20 @@ export function QuestionList({
             ? "border-2 border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-950"
             : "border-2 border-gray-200 dark:border-gray-700";
         const singleStyle = isSelected
-            ? "bg-blue-500 dark:bg-blue-400"
-            : "border-2 border-gray-200 dark:border-gray-700";
-        
+            ? "bg-blue-500 dark:bg-blue-400" // Changed for single selection visual cue
+            : "border-2 border-gray-200 dark:border-gray-700"; // Keep border for unselected single
+
         return `${baseStyle} ${isMultiple ? multipleStyle : singleStyle} rounded-lg`;
     };
 
+
     const calculatePercentage = (correct: number, total: number) => {
+        if (total === 0) return 0; // Avoid division by zero
         return Math.round((correct / total) * 100);
     };
 
-    const formatTimeSpent = (startTime: Date, endTime: Date) => {
+    const formatTimeSpent = (startTime: Date | null, endTime: Date | null) => {
+        if (!startTime || !endTime) return "--m --s";
         const diff = endTime.getTime() - startTime.getTime();
         const minutes = Math.floor(diff / 60000);
         const seconds = Math.floor((diff % 60000) / 1000);
@@ -287,17 +355,23 @@ export function QuestionList({
     };
 
     const calculateFinalScore = (correctCount: number, totalQuestions: number) => {
+        if (totalQuestions === 0) return 0;
         const baseScore = (correctCount / totalQuestions) * 100;
+        let finalScore = baseScore;
         if (isPenalized) {
-            return Math.max(0, baseScore - 10); // Penalización del 10%
+            finalScore = Math.max(0, baseScore - 10); // Penalización del 10%
         }
-        return baseScore;
+        return Math.round(finalScore); // Round the final score
     };
+
+
+    const correctCount = answerResults.filter(Boolean).length;
+    const finalScore = calculateFinalScore(correctCount, questions.length);
 
     return (
         <div className="space-y-8">
             <div className="sticky top-0 z-10 py-4 border-b backdrop-blur-sm bg-opacity-90 bg-white dark:bg-gray-900 rounded-md">
-                <div className="md:hidden space-y-4 mx-2">
+                 <div className="md:hidden space-y-4 mx-2">
                     <h2 className="text-xl font-semibold text-center">
                         {showResults ? "Results" : "Questions"}
                     </h2>
@@ -312,8 +386,8 @@ export function QuestionList({
                             <div className="flex items-center gap-2 text-sm">
                                 <span className="font-medium">Time:</span>
                                 <span className={`px-2 py-1 rounded-md font-mono
-                                    ${timeRemaining <= 60 
-                                        ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 animate-pulse' 
+                                    ${timeRemaining <= 60
+                                        ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 animate-pulse'
                                         : 'bg-gray-100 dark:bg-gray-800'}`}
                                 >
                                     {formatTimeRemaining(timeRemaining)}
@@ -339,8 +413,8 @@ export function QuestionList({
                                 <div className="flex items-center gap-2 text-sm">
                                     <span className="font-medium">Time Left:</span>
                                     <span className={`px-2 py-1 rounded-md font-mono
-                                        ${timeRemaining <= 60 
-                                            ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 animate-pulse' 
+                                        ${timeRemaining <= 60
+                                            ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 animate-pulse'
                                             : 'bg-gray-100 dark:bg-gray-800'}`}
                                     >
                                         {formatTimeRemaining(timeRemaining)}
@@ -352,33 +426,68 @@ export function QuestionList({
                 </div>
 
                 <div className="mt-2 h-1 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <div 
+                    <div
                         className="h-full bg-blue-500 dark:bg-blue-400 transition-all duration-300"
-                        style={{ width: `${(answeredCount / questions.length) * 100}%` }}
+                        style={{ width: `${calculatePercentage(answeredCount, questions.length)}%` }}
                     />
                 </div>
             </div>
 
             {timeLimit && autoSubmitWarning && timeRemaining > 0 && !showResults && (
-                <div className="fixed bottom-4 right-4 bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 p-4 rounded-lg shadow-lg animate-bounce">
+                <div className="fixed bottom-4 right-4 bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 p-4 rounded-lg shadow-lg animate-bounce z-50">
                     <p className="font-medium">⚠️ 1 minute remaining!</p>
                     <p className="text-sm">Quiz will be automatically submitted when time runs out.</p>
+                </div>
+            )}
+
+            {showResults && (
+                <div className="p-6 rounded-xl border bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+                    <h3 className="text-xl font-semibold mb-4 text-center">Quiz Results</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Score</p>
+                            <p className={`text-3xl font-bold ${finalScore >= 70 ? 'text-green-600 dark:text-green-400' : finalScore >= 40 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
+                                {finalScore}%
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Correct Answers</p>
+                            <p className="text-3xl font-bold">{correctCount} / {questions.length}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Time Spent</p>
+                            <p className="text-3xl font-bold">{formatTimeSpent(startTime, endTime)}</p>
+                        </div>
+                    </div>
+                    {isPenalized && (
+                        <p className="text-center text-sm text-red-600 dark:text-red-400 mt-3">
+                            -10% score penalty applied due to time limit exceeded.
+                        </p>
+                    )}
+                    <div className="mt-6 flex justify-center">
+                        <button
+                            onClick={handleRetakeQuiz}
+                            className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                        >
+                            Retake Quiz
+                        </button>
+                    </div>
                 </div>
             )}
 
             {questions.map((question, qIndex) => (
                 <div
                     key={qIndex}
-                    className={`p-6 rounded-xl border ${
+                    className={`p-6 rounded-xl border transition-colors duration-300 ${
                         showResults
                             ? answerResults[qIndex]
                                 ? "border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-900/10"
                                 : "border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-900/10"
-                            : "border-gray-200 dark:border-gray-800"
+                            : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
                     }`}
                 >
                     <div className="flex gap-3">
-                        <span className="text-lg font-medium">
+                        <span className="text-lg font-medium pt-1">
                             {qIndex + 1}.
                         </span>
                         <div className="space-y-4 flex-1">
@@ -387,13 +496,11 @@ export function QuestionList({
                                     <h3 className="text-lg font-medium">
                                         {question.question}
                                     </h3>
-                                    <div className="space-y-2">
-                                        {question.type ===
-                                            "multiple-choice" && (
-                                            <div className="space-y-2">
+                                    <div className="space-y-3">
+                                        {question.type === "multiple-choice" && (
+                                            <>
                                                 {question.correctAnswersCount &&
-                                                    question.correctAnswersCount >
-                                                        1 && (
+                                                    question.correctAnswersCount > 1 && (
                                                         <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50/50 dark:bg-blue-950/50 rounded-lg border border-blue-100 dark:border-blue-900">
                                                             <div className="flex-1">
                                                                 <h4 className="text-sm font-medium text-blue-700 dark:text-blue-300">
@@ -401,24 +508,17 @@ export function QuestionList({
                                                                 </h4>
                                                                 <p className="text-xs text-blue-600/80 dark:text-blue-400/80">
                                                                     Select{" "}
-                                                                    {
-                                                                        question.correctAnswersCount
-                                                                    }{" "}
+                                                                    {question.correctAnswersCount}{" "}
                                                                     answers
                                                                 </p>
                                                             </div>
                                                             <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded-md">
                                                                 <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
                                                                     {(
-                                                                        selectedAnswers[
-                                                                            qIndex
-                                                                        ] as number[] ||
-                                                                        []
+                                                                        selectedAnswers[qIndex] as number[] || []
                                                                     ).length}{" "}
                                                                     of{" "}
-                                                                    {
-                                                                        question.correctAnswersCount
-                                                                    }
+                                                                    {question.correctAnswersCount}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -429,36 +529,25 @@ export function QuestionList({
                                                             const isSelected = Array.isArray(selectedAnswers[qIndex]) &&
                                                                 (selectedAnswers[qIndex] as number[]).includes(oIndex);
                                                             const isMultiple =
-                                                                (question.correctAnswersCount ||
-                                                                    1) > 1;
-                                                            const isDisabled =
+                                                                (question.correctAnswersCount || 1) > 1;
+                                                            const isDisabled = showResults || (
                                                                 !isSelected &&
                                                                 isMultiple &&
                                                                 Array.isArray(selectedAnswers[qIndex]) &&
                                                                 (selectedAnswers[qIndex] as number[]).length >=
-                                                                    (question.correctAnswersCount ||
-                                                                        1);
+                                                                    (question.correctAnswersCount || 1)
+                                                            );
 
                                                             return (
                                                                 <button
-                                                                    key={
-                                                                        oIndex
-                                                                    }
-                                                                    onClick={() =>
-                                                                        handleSelect(
-                                                                            qIndex,
-                                                                            oIndex
-                                                                        )
-                                                                    }
-                                                                    disabled={
-                                                                        isDisabled
-                                                                    }
+                                                                    key={oIndex}
+                                                                    onClick={() => handleSelect(qIndex, oIndex)}
+                                                                    disabled={isDisabled}
                                                                     className={`
                                                                         relative w-full p-4 text-left transition-all
-                                                                        ${
-                                                                            isDisabled
-                                                                                ? "opacity-50 cursor-not-allowed"
-                                                                                : "hover:transform hover:scale-[1.01]"
+                                                                        ${isDisabled
+                                                                            ? "opacity-50 cursor-not-allowed"
+                                                                            : "hover:transform hover:scale-[1.01]"
                                                                         }
                                                                         group
                                                                     `}
@@ -472,41 +561,25 @@ export function QuestionList({
                                                                     <div className="relative flex items-center gap-3">
                                                                         <div
                                                                             className={`
-                                                                                flex items-center justify-center w-5 h-5
-                                                                                ${
-                                                                                    isMultiple
-                                                                                        ? "rounded-md"
-                                                                                        : "rounded-full"
-                                                                                }
-                                                                                ${
-                                                                                    isSelected
-                                                                                        ? "text-white"
-                                                                                        : "text-transparent"
-                                                                                }
+                                                                                flex items-center justify-center w-5 h-5 border
+                                                                                ${isMultiple ? "rounded-md" : "rounded-full"}
+                                                                                ${isSelected
+                                                                                    ? (isMultiple ? "bg-blue-500 dark:bg-blue-400 border-blue-500 dark:border-blue-400 text-white" : "bg-blue-500 dark:bg-blue-400 border-blue-500 dark:border-blue-400 text-white") // Keep checkmark visible for single selected
+                                                                                    : "border-gray-300 dark:border-gray-600 text-transparent"}
                                                                                 transition-colors
-                                                                                ${
-                                                                                    isMultiple &&
-                                                                                    isSelected
-                                                                                        ? "bg-blue-500 dark:bg-blue-400"
-                                                                                        : ""
-                                                                                }
                                                                             `}
                                                                         >
                                                                             <Check className="w-3 h-3" />
                                                                         </div>
+
                                                                         <span
                                                                             className={`
                                                                                 flex-1 text-sm
-                                                                                ${
-                                                                                    isSelected
-                                                                                        ? "font-medium"
-                                                                                        : "font-normal"
-                                                                                }
+                                                                                ${isSelected ? "font-medium" : "font-normal"}
+                                                                                ${isDisabled ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}
                                                                             `}
                                                                         >
-                                                                            {
-                                                                                option
-                                                                            }
+                                                                            {option}
                                                                         </span>
                                                                     </div>
                                                                 </button>
@@ -514,155 +587,121 @@ export function QuestionList({
                                                         }
                                                     )}
                                                 </div>
-                                            </div>
+                                            </>
                                         )}
                                         {question.type === "true-false" && (
-                                            <>
-                                                <button
-                                                    onClick={() =>
-                                                        handleSelect(
-                                                            qIndex,
-                                                            "true"
-                                                        )
-                                                    }
-                                                    className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                                                        selectedAnswers[
-                                                            qIndex
-                                                        ] === "true"
-                                                            ? "border-black bg-gray-50 dark:border-white dark:bg-gray-900"
-                                                            : "border-transparent hover:bg-gray-50 dark:hover:bg-gray-900"
-                                                    }`}
-                                                >
-                                                    True
-                                                </button>
-                                                <button
-                                                    onClick={() =>
-                                                        handleSelect(
-                                                            qIndex,
-                                                            "false"
-                                                        )
-                                                    }
-                                                    className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                                                        selectedAnswers[
-                                                            qIndex
-                                                        ] === "false"
-                                                            ? "border-black bg-gray-50 dark:border-white dark:bg-gray-900"
-                                                            : "border-transparent hover:bg-gray-50 dark:hover:bg-gray-900"
-                                                    }`}
-                                                >
-                                                    False
-                                                </button>
-                                            </>
+                                            <div className="flex gap-3">
+                                                {[true, false].map((value) => {
+                                                    const isSelected = selectedAnswers[qIndex] === String(value);
+                                                    return (
+                                                        <button
+                                                            key={String(value)}
+                                                            onClick={() => handleSelect(qIndex, String(value))}
+                                                            disabled={showResults}
+                                                            className={`
+                                                                flex-1 p-3 rounded-lg border text-center transition-colors
+                                                                ${isSelected
+                                                                    ? 'bg-blue-500 text-white border-blue-500'
+                                                                    : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                                                }
+                                                                ${showResults ? 'cursor-not-allowed opacity-70' : ''}
+                                                            `}
+                                                        >
+                                                            {String(value).charAt(0).toUpperCase() + String(value).slice(1)}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
                                         )}
                                         {question.type === "short-answer" && (
                                             <input
                                                 type="text"
-                                                onChange={(e) =>
-                                                    handleSelect(
-                                                        qIndex,
-                                                        e.target.value
-                                                    )
-                                                }
-                                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                                value={(selectedAnswers[qIndex] as string) || ''}
+                                                onChange={(e) => handleSelect(qIndex, e.target.value)}
+                                                disabled={showResults}
+                                                placeholder="Type your answer here..."
+                                                className={`
+                                                    w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors
+                                                    ${showResults ? 'cursor-not-allowed opacity-70' : ''}
+                                                `}
                                             />
                                         )}
                                     </div>
-                                    {question?.hint && (
-                                        <div className="mt-2">
-                                            <button
-                                                onClick={() =>
-                                                    toggleHint(qIndex)
-                                                }
-                                                className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
-                                            >
-                                                <HelpCircle className="w-4 h-4" />
-                                                {showHint.includes(qIndex)
-                                                    ? "Hide hint"
-                                                    : "Show hint"}
-                                            </button>
-                                            {showHint.includes(qIndex) && (
-                                                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                                    {question.hint}
+
+                                    {showResults && (
+                                        <div className={`mt-4 p-4 rounded-lg border 
+                                            ${answerResults[qIndex]
+                                                ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' // Green if score >= threshold
+                                                : 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800'}` // Red otherwise
+                                        }>
+                                            <div className="flex items-center gap-2 mb-2">
+                                                {answerResults[qIndex] ? (
+                                                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                                ) : (
+                                                    <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                                                )}
+                                                <span className={`font-medium ${answerResults[qIndex] ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                                                    {answerResults[qIndex] ? "Correct" : "Incorrect"}
+                                                    {/* Display score for short answers */}
+                                                    {question.type === 'short-answer' && shortAnswerDetails[qIndex]?.score !== null && (
+                                                        <span className="ml-2 text-sm font-normal">({shortAnswerDetails[qIndex]?.score}%)</span>
+                                                    )}
+                                                </span>
+                                            </div>
+
+                                            {/* Display API reason for short answers */}
+                                            {question.type === 'short-answer' && shortAnswerDetails[qIndex]?.reason && (
+                                                 <p className="text-sm mb-2 italic text-gray-600 dark:text-gray-400">
+                                                    {shortAnswerDetails[qIndex]?.reason}
+                                                 </p>
+                                            )}
+
+
+                                            {/* Only show the original correct answer if the user was marked INCORRECT for non-short-answer types */}
+                                            {!answerResults[qIndex] && question.type !== 'short-answer' && (
+                                                <div className="text-sm space-y-1 mb-2">
+                                                    {/* Show correct options for multiple-choice */}
+                                                    {question.type === 'multiple-choice' && Array.isArray(question.correctAnswer) && (
+                                                        <p><span className="font-medium">Correct Answer(s):</span><br />
+                                                            <span className="whitespace-pre-wrap">
+                                                                {getFormattedAnswers(question, question.correctAnswer as number[])}
+                                                            </span>
+                                                        </p>
+                                                    )}
+                                                    {/* Show correct answer ONLY for true/false when incorrect */}
+                                                    {question.type === 'true-false' && (
+                                                        <p><span className="font-medium">Correct Answer:</span> {String(question.correctAnswer)}</p>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Always show the original explanation */}
+                                            {question.why && (
+                                                <p className={`text-sm ${!answerResults[qIndex] || question.type === 'short-answer' ? 'mt-2 pt-2 border-t border-gray-200 dark:border-gray-700' : ''}`}>
+                                                    <span className="font-medium">Explanation:</span> {question.why}
+                                                    {question.page && (
+                                                         <span className="ml-2 font-semibold">
+                                                            (Page {question.page})
+                                                        </span>
+                                                    )}
                                                 </p>
                                             )}
                                         </div>
                                     )}
-                                    {showResults && (
-                                        <div className="flex items-center gap-2 mt-4 text-sm">
-                                            {answerResults[qIndex] ? (
-                                                <>
-                                                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                                                    <div className="space-y-2">
-                                                        <span className="text-green-600 dark:text-green-400">
-                                                            Correct!
-                                                        </span>
-                                                        {question.why && (
-                                                            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm italic">
-                                                                {question.why}
-                                                                {question.page && (
-                                                                    <span className="ml-2 font-semibold">
-                                                                        (Page{" "}
-                                                                        {
-                                                                            question.page
-                                                                        }
-                                                                        )
-                                                                    </span>
-                                                                )}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                                                    <div className="space-y-2">
-                                                        <div className="text-red-600 dark:text-red-400">
-                                                            <p>
-                                                                Incorrect. The
-                                                                correct answer
-                                                                {Array.isArray(
-                                                                    question.correctAnswer
-                                                                ) &&
-                                                                question
-                                                                    .correctAnswer
-                                                                    .length > 1
-                                                                    ? "s were"
-                                                                    : " was"}
-                                                                :
-                                                            </p>
-                                                            <pre className="mt-1 whitespace-pre-line">
-                                                                {question.type ===
-                                                                    "multiple-choice" &&
-                                                                question.options
-                                                                    ? getFormattedAnswers(
-                                                                          question,
-                                                                          Array.isArray(
-                                                                              question.correctAnswer
-                                                                          )
-                                                                              ? question.correctAnswer
-                                                                              : [
-                                                                                    question.correctAnswer as unknown as number,
-                                                                                ]
-                                                                      )
-                                                                    : question.correctAnswer}
-                                                            </pre>
-                                                        </div>
-                                                        {question.why && (
-                                                            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm italic">
-                                                                {question.why}
-                                                                {question.page && (
-                                                                    <span className="ml-2 font-semibold">
-                                                                        (Page{" "}
-                                                                        {
-                                                                            question.page
-                                                                        }
-                                                                        )
-                                                                    </span>
-                                                                )}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </>
+
+                                    {question.hint && !showResults && (
+                                        <div className="mt-3">
+                                            <button
+                                                onClick={() => toggleHint(qIndex)}
+                                                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                            >
+                                                <HelpCircle className="w-4 h-4" />
+                                                {showHint.includes(qIndex) ? "Hide Hint" : "Show Hint"}
+                                            </button>
+                                            {showHint.includes(qIndex) && (
+                                                <p className="mt-1 p-3 text-sm bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-md text-yellow-700 dark:text-yellow-300">
+                                                    {question.hint}
+                                                </p>
                                             )}
                                         </div>
                                     )}
@@ -674,69 +713,15 @@ export function QuestionList({
             ))}
 
             {!showResults && (
-                <Submit
-                    onClick={handleCheckAnswers}
-                    loading={isChecking}
-                    disabled={isChecking}
-                    primaryColor="green-600"
-                    foregroundColor="white"
-                >
-                    Check answers
-                </Submit>
-            )}
-
-            {showResults && (
-                <div className="space-y-6">
-                    <div className="p-8 rounded-3xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
-                        <div className="space-y-6">
-                            <h3 className="text-2xl font-medium text-gray-900 dark:text-gray-100">
-                                Quiz Complete
-                            </h3>
-                            <div className="flex items-end gap-4">
-                                <span className="text-6xl font-semibold text-gray-900 dark:text-gray-100">
-                                    {calculateFinalScore(
-                                        answerResults.filter((result) => result).length,
-                                        questions.length
-                                    ).toFixed(1)}%
-                                </span>
-                                <div className="mb-2 space-y-1">
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                        Accuracy
-                                    </p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                                        {answerResults.filter((result) => result).length} correct answers
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 transition-all duration-500 ease-out"
-                                    style={{ 
-                                        width: `${calculatePercentage(
-                                            answerResults.filter((result) => result).length,
-                                            questions.length
-                                        )}%` 
-                                    }}
-                                />
-                            </div>
-                            <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
-                                <span>Total Questions: {questions.length}</span>
-                                <span>Time Spent: {startTime && endTime ? formatTimeSpent(startTime, endTime) : elapsedTime}</span>
-                            </div>
-                            {isPenalized && (
-                                <div className="text-sm text-red-600 dark:text-red-400">
-                                    10% penalty applied for exceeding time limit
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                <div className="flex justify-center mt-8">
                     <Submit
-                        onClick={handleRetakeQuiz}
-                        loading={false}
-                        primaryColor="yellow"
-                        foregroundColor="black"
+                        onClick={handleCheckAnswers}
+                        disabled={answeredCount !== questions.length || isChecking}
+                        loading={isChecking} // Changed from isLoading
+                        primaryColor="green-600" // Changed to a valid color from the allowed types
+                        foregroundColor="white" // Example color
                     >
-                        Retake Quiz
+                        {isChecking ? "Checking..." : "Check Answers"}
                     </Submit>
                 </div>
             )}
