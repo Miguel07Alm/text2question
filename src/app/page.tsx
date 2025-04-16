@@ -364,7 +364,7 @@ function QuizContent() {
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             <Label className="text-gray-900 dark:text-gray-100">
-                                Time Limit
+                                Time Limit (minutes)
                             </Label>
                             <Switch
                                 id="enable-time-limit"
