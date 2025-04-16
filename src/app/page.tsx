@@ -425,7 +425,7 @@ function QuizContent() {
                                                 ); // Time in minutes
                                                 return (
                                                     <>
-                                                        <p>You've reached the daily generation limit ({parsedError.limit}) for anonymous users.</p>
+                                                        <p>You&apos;ve reached the daily generation limit ({parsedError.limit}) for anonymous users.</p>
                                                         <p>Please try again after {resetTime.toLocaleTimeString()}.</p>
                                                         <div className="pt-2">
                                                             <Button size="sm" variant="outline" onClick={() => signIn("google")}>
