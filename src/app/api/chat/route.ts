@@ -2,10 +2,45 @@ import { GenerateQuestionsParams, QuestionSchema } from "@/types/types";
 import { streamObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { deepseek } from "@ai-sdk/deepseek";
+import { redis } from "@/lib/redis"; // Import the Redis client
+import { Ratelimit } from "@upstash/ratelimit"; // Import Ratelimit
 
 export const maxDuration = 60;
 
+// Initialize Rate Limiter: Allow 5 requests per day per IP
+const ratelimit = new Ratelimit({
+    redis: redis,
+    limiter: Ratelimit.slidingWindow(5, "1 d"), // Changed from 10 to 5 requests per 1 day
+    analytics: true,
+    prefix: "@upstash/ratelimit",
+});
+
 export async function POST(req: Request) {
+    // --- Rate Limiting Logic Start ---
+    const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("remote-addr") ?? "127.0.0.1";
+    const { success, limit, remaining, reset } = await ratelimit.limit(ip);
+
+    if (!success) {
+        return new Response(
+            JSON.stringify({
+                error: "Rate limit exceeded. Please try again tomorrow.",
+                limit,
+                remaining,
+                reset: new Date(reset).toISOString(),
+            }),
+            {
+                status: 429,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-RateLimit-Limit': limit.toString(),
+                    'X-RateLimit-Remaining': remaining.toString(),
+                    'X-RateLimit-Reset': reset.toString(),
+                },
+            }
+        );
+    }
+    // --- Rate Limiting Logic End ---
+
     try {
         const {
             input,

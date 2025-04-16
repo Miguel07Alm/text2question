@@ -400,7 +400,29 @@ function QuizContent() {
                                     Error generating questions:
                                 </div>
                                 <div className="opacity-90">
-                                    {error.message}
+                                    {(() => {
+                                        try {
+                                            // Attempt to parse the error message as JSON
+                                            const parsedError = JSON.parse(error.message);
+                                            // Check if it's the specific rate limit error
+                                            if (parsedError && parsedError.error === "Rate limit exceeded. Please try again tomorrow.") {
+                                                const resetTime = new Date(parsedError.reset);
+                                                const timeUntilReset = Math.max(0, Math.ceil((resetTime.getTime() - Date.now()) / (1000 * 60))); // Time in minutes
+                                                return (
+                                                    <>
+                                                        <p>{parsedError.error}</p>
+                                                        <p>You have used your daily limit of {parsedError.limit} generations.</p>
+                                                        <p>Please try again in approximately {timeUntilReset} minutes (at {resetTime.toLocaleTimeString()}).</p>
+                                                    </>
+                                                );
+                                            }
+                                        } catch (e) {
+                                            // If parsing fails or it's not the rate limit error, display the original message
+                                            return error.message;
+                                        }
+                                        // Fallback to original message if parsing succeeds but it's not the rate limit error
+                                        return error.message;
+                                    })()}
                                 </div>
                             </div>
                         )}
