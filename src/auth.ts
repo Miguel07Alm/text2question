@@ -118,7 +118,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           newSession.user = { ...newSession.user, ...tokenUser };
       } else if (token.user && !newSession.user && token.sub) {
           // Handle case where session.user might not be initially populated
-          newSession.user = { id: token.sub, ...(token.user as any) };
+          newSession.user = { id: token.sub, ...(token.user) };
       }
 
       return newSession; // Return the correctly typed session object
