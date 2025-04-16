@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { ExpandedTextarea } from "@/components/expanded-textarea";
 import { NumberSelector } from "@/components/number-selector";
 import { ModeToggle } from "@/components/ModeToggle";
-import { GithubIcon } from "lucide-react";
+import { GithubIcon, LogIn } from "lucide-react";
 import { ShareQuiz } from "@/components/share-quiz";
 import { ExportQuestions } from "@/components/export-questions";
 import { shuffleArray, shuffleMultipleChoiceOptions } from "@/utils/array";
@@ -29,6 +29,8 @@ import { useRouter } from "next/navigation";
 import { SystemPromptDialog } from "@/components/system-prompt-dialog";
 import { AIDisclaimer } from "@/components/ai-disclaimer";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { signIn } from 'next-auth/react';
 
 // Separate component for quiz content
 function QuizContent() {
@@ -405,14 +407,33 @@ function QuizContent() {
                                             // Attempt to parse the error message as JSON
                                             const parsedError = JSON.parse(error.message);
                                             // Check if it's the specific rate limit error
-                                            if (parsedError && parsedError.error === "Rate limit exceeded. Please try again tomorrow.") {
-                                                const resetTime = new Date(parsedError.reset);
-                                                const timeUntilReset = Math.max(0, Math.ceil((resetTime.getTime() - Date.now()) / (1000 * 60))); // Time in minutes
+                                            if (
+                                                parsedError &&
+                                                parsedError.error ===
+                                                    "Rate limit exceeded. Please try again later."
+                                            ) {
+                                                const resetTime = new Date(
+                                                    parsedError.reset
+                                                );
+                                                const timeUntilReset = Math.max(
+                                                    0,
+                                                    Math.ceil(
+                                                        (resetTime.getTime() -
+                                                            Date.now()) /
+                                                            (1000 * 60)
+                                                    )
+                                                ); // Time in minutes
                                                 return (
                                                     <>
-                                                        <p>{parsedError.error}</p>
-                                                        <p>You have used your daily limit of {parsedError.limit} generations.</p>
-                                                        <p>Please try again in approximately {timeUntilReset} minutes (at {resetTime.toLocaleTimeString()}).</p>
+                                                        <p>You've reached the daily generation limit ({parsedError.limit}) for anonymous users.</p>
+                                                        <p>Please try again after {resetTime.toLocaleTimeString()}.</p>
+                                                        <div className="pt-2">
+                                                            <Button size="sm" variant="outline" onClick={() => signIn("google")}>
+                                                                <LogIn className="mr-2 h-4 w-4" /> Sign in with Google
+                                                            </Button>
+                                                            {/* Updated text below */}
+                                                            <p className="text-xs text-muted-foreground mt-1">Sign in to increase your daily limit to 15 generations (3x more!).</p>
+                                                        </div>
                                                     </>
                                                 );
                                             }
