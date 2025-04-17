@@ -11,8 +11,11 @@ Text2Question generates quiz questions from any given text. Users can upload tex
 - 🤖 AI-powered question generation
   - Multiple AI model support:
     - Deepseek Chat (default)
-    - OpenAI GPT-4
+    - OpenAI GPT-4o-mini
   - Configurable model selection
+- 🔑 **User Authentication:**
+  - Sign in with Google (OAuth)
+  - Increased daily generation limits for registered users
 - 📝 Multiple question types:
   - Multiple choice (with configurable number of options):
     - Support for multiple correct answers
@@ -73,6 +76,7 @@ Text2Question generates quiz questions from any given text. Users can upload tex
   - Detailed explanations for correct answers
   - Page references for PDF content
   - Helpful hints
+- **Rate Limiting:** Anonymous users have a lower daily generation limit compared to registered users. Sign in with Google to increase your limit.
 
 ### Quiz Taking
 - Questions are presented in random order
@@ -150,16 +154,36 @@ The AI will remember your settings between sessions, but be aware that it may oc
 Before running this application, you will need:
 
 - Node.js 18+ installed
-- An OpenAI API key
+- An OpenAI API key (or Deepseek API key)
+- Google OAuth Credentials (Client ID and Secret)
 
 ## Environment Variables
 
-Create a `.env.local` file in the root directory with the following content:
+Create a `.env.local` file in the root directory with the following content. You can get Google credentials from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
 
-```
+```dotenv
+# AI API Keys (at least one is required)
 OPENAI_API_KEY=your_openai_api_key
 DEEPSEEK_API_KEY=your_deepseek_api_key
+
+# Google OAuth Credentials
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# NextAuth.js Secret (generate a random string, e.g., using `openssl rand -base64 32`)
+AUTH_SECRET=your_secure_random_string
+
+# Redis connection URL (for session storage and rate limiting)
+# Example for Upstash: redis://default:<password>@<region>.<id>.upstash.io:<port>
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+
+# Base URL of your application (important for NextAuth redirects)
+# Example: http://localhost:3000 for development
+NEXTAUTH_URL=http://localhost:3000
 ```
+
+**Important:** Add `.env*.local` to your `.gitignore` file to avoid committing your secrets.
 
 ## Getting Started
 
@@ -187,7 +211,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) (or your configured `NEXTAUTH_URL`) in your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
