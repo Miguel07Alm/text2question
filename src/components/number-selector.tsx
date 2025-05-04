@@ -7,23 +7,13 @@ interface NumberSelectorProps {
     onChange: (value: number) => void
     min?: number
     max?: number
-    onMaxChange?: (newMax: number) => void
     className?: string
 }
 
-export function NumberSelector({ value, onChange, min = 1, max = 20, onMaxChange, className }: NumberSelectorProps) {
+export function NumberSelector({ value, onChange, min = 1, max = 20, className }: NumberSelectorProps) {
     const [isEditingMax, setIsEditingMax] = useState(false)
     const [localMax, setLocalMax] = useState(max)
     const presets = Array.from(new Set([5, 10, 15, localMax].filter((preset) => preset <= localMax)))
-
-    const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newMax = Math.max(min, Math.min(100, Number(e.target.value)))
-        setLocalMax(newMax)
-        onMaxChange?.(newMax)
-        if (value > newMax) {
-            onChange(newMax)
-        }
-    }
 
     return (
         <div className={cn("space-y-4", className)}>
@@ -45,12 +35,6 @@ export function NumberSelector({ value, onChange, min = 1, max = 20, onMaxChange
                         className="w-32 accent-gray-900 dark:accent-gray-100"
                     />
                     <span className="w-12 text-center font-mono">{value}</span>
-                    <button
-                        onClick={() => setIsEditingMax(!isEditingMax)}
-                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                    >
-                        <Settings2 className="w-4 h-4" />
-                    </button>
                 </div>
                 <button
                     onClick={() => value < localMax && onChange(value + 1)}
@@ -60,21 +44,7 @@ export function NumberSelector({ value, onChange, min = 1, max = 20, onMaxChange
                     <Plus className="w-4 h-4" />
                 </button>
             </div>
-            {isEditingMax && (
-                <div className="flex items-center space-x-2">
-                    <label className="text-sm text-gray-600 dark:text-gray-400">
-                        Max:
-                    </label>
-                    <input
-                        type="number"
-                        min={min}
-                        max={100}
-                        value={localMax}
-                        onChange={handleMaxChange}
-                        className="w-20 px-2 py-1 text-sm rounded border border-gray-200 dark:border-gray-800"
-                    />
-                </div>
-            )}
+            
             <div className="flex flex-wrap gap-2">
                 {presets.map((preset) => (
                     <button

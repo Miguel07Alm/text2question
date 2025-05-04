@@ -495,7 +495,6 @@ function QuizContent() {
                             onChange={setQuestionCount}
                             min={1}
                             max={maxQuestions}
-                            onMaxChange={setMaxQuestions}
                         />
                     </div>
                     <div className="space-y-2">
