@@ -7,6 +7,7 @@ import Script from "next/script";
 import { SessionProvider } from "next-auth/react"; // Import SessionProvider
 import { auth } from "@/auth";
 import { AuthButton } from "@/components/auth-button";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,7 +51,7 @@ export default async function RootLayout({ // Make the layout async
                               <div className="flex items-center gap-2">
                                   {" "}
                                   {/* Group icon and text */}
-                                  <a href="/">
+                                  <Link href="/">
                                       <img
                                           src="/icon.png"
                                           alt="Text2Question Logo"
@@ -58,7 +59,7 @@ export default async function RootLayout({ // Make the layout async
                                           height={28}
                                           className="object-contain"
                                       />
-                                  </a>
+                                  </Link>
                                   <span className="font-semibold text-sm">
                                       Text2Question
                                   </span>
