@@ -11,7 +11,7 @@ import {
     Question,
     QuestionSchema,
 } from "@/types/types";
-import { experimental_useObject as useObject } from "ai/react";
+import { experimental_useObject as useObject } from "@ai-sdk/react";
 import {
     Select,
     SelectContent,
@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { ExpandedTextarea } from "@/components/expanded-textarea";
 import { NumberSelector } from "@/components/number-selector";
 import { ModeToggle } from "@/components/ModeToggle";
-import { GithubIcon, LogIn } from "lucide-react";
+import { BrainCircuit, Coins, GithubIcon, LogIn } from "lucide-react";
 import { ShareQuiz } from "@/components/share-quiz";
 import { ExportQuestions } from "@/components/export-questions";
 import { shuffleArray, shuffleMultipleChoiceOptions } from "@/utils/array";
@@ -36,6 +36,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
+import { RateLimitError } from "@/components/rate-limit-error";
 
 // Separate component for quiz content
 function QuizContent() {
@@ -61,8 +62,14 @@ function QuizContent() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const router = useRouter();
-    const { data: session } = useSession();
-    const [isCheckoutLoading, setIsCheckoutLoading] = useState(false); 
+    const { data: session, status: sessionStatus } = useSession(); // Get session status
+    const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+    const [remainingGenerations, setRemainingGenerations] = useState<
+        number | null
+    >(null);
+    const [priceInfo, setPriceInfo] = useState<{
+        formattedPrice: string;
+    } | null>(null);
 
     const {
         isLoading,
@@ -100,6 +107,74 @@ function QuizContent() {
             }
         }
     }, [searchParams, toast]);
+    // Fetch price info on mount
+    useEffect(() => {
+        const fetchPrice = async () => {
+            try {
+                const response = await fetch("/api/stripe/price-info");
+                if (response.ok) {
+                    const data = await response.json();
+                    setPriceInfo({ formattedPrice: data.formattedPrice });
+                } else {
+                    console.error(
+                        "Failed to fetch price info:",
+                        response.statusText
+                    );
+                }
+            } catch (error) {
+                console.error("Error fetching price info:", error);
+            }
+        };
+        fetchPrice();
+    }, []);
+    const fetchRemainingGenerations = async () => {
+        if (sessionStatus !== "loading") {
+            try {
+                const response = await fetch("/api/user/credits");
+                if (response.ok) {
+                    const data = await response.json();
+                    setRemainingGenerations(data.remainingGenerations);
+                } else {
+                    console.error(
+                        "Failed to fetch remaining generations:",
+                        response.statusText
+                    );
+                    setRemainingGenerations(0);
+                }
+            } catch (error) {
+                console.error("Error fetching remaining generations:", error);
+                setRemainingGenerations(0);
+            }
+        }
+    };
+    useEffect(() => {
+        fetchRemainingGenerations();
+    }, [sessionStatus]);
+    useEffect(() => {
+        const paymentSuccess = searchParams.get("payment_success");
+        const paymentCancel = searchParams.get("payment_cancel");
+
+        if (paymentSuccess === "true") {
+            toast({
+                title: "Payment Successful!",
+                description: "5 credits have been added to your account.",
+                variant: "default", // Or use a specific success variant if defined
+            });
+            fetchRemainingGenerations(); // Re-fetch credits after successful purchase
+            // Remove query params from URL without reload
+            router.replace("/", undefined); // Use router.replace
+        }
+        if (paymentCancel === "true") {
+            toast({
+                title: "Payment Cancelled",
+                description: "Your payment process was cancelled.",
+                variant: "destructive", // Or 'default'
+            });
+            // Remove query params from URL without reload
+            router.replace("/", undefined); // Use router.replace
+        }
+    }, [searchParams, toast, router]); // Add router to dependencies
+
 
     const handleSubmit = async () => {
         const generateParams: GenerateQuestionsParams = {
@@ -117,6 +192,9 @@ function QuizContent() {
             model: selectedModel, // Add model selection
         };
         submit(generateParams);
+        setRemainingGenerations(
+            remainingGenerations ? remainingGenerations - 1 : 0
+        );
     };
     // Function to handle purchasing credits
     const handlePurchaseCredits = async () => {
@@ -144,9 +222,7 @@ function QuizContent() {
                 return;
             }
 
-            // Redirect to Stripe Checkout
             window.location.href = checkoutSession.url;
-            // No need to set loading to false here as the page will redirect
         } catch (err) {
             console.error("Error purchasing credits:", err);
             toast({
@@ -187,8 +263,20 @@ function QuizContent() {
 
     return (
         <main className="min-h-screen p-8 max-w-2xl mx-auto">
-            <div className="flex w-full justify-between items-center">
-                <SystemPromptDialog onPromptChange={setSystemPrompt} />
+            <div className="flex w-full justify-between items-center mb-4">
+                <div className="flex items-center gap-4">
+                    <SystemPromptDialog onPromptChange={setSystemPrompt} />
+                    {sessionStatus !== "loading" &&
+                        remainingGenerations !== null && (
+                            <div
+                                className="flex items-center gap-1 text-sm text-muted-foreground border px-2 py-1 rounded-md"
+                                title="Remaining Generations"
+                            >
+                                <BrainCircuit className="h-4 w-4 text-blue-500" />
+                                <span>{remainingGenerations}</span>
+                            </div>
+                        )}
+                </div>
                 <ModeToggle />
             </div>
 
@@ -446,126 +534,15 @@ function QuizContent() {
                         {error && (
                             <div className="p-4 mb-4 text-sm border rounded-lg bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
                                 <div className="opacity-90">
-                                    {(() => {
-                                        try {
-                                            const parsedError = JSON.parse(
-                                                error.message
-                                            );
-                                            if (
-                                                parsedError &&
-                                                parsedError.error ===
-                                                    "Rate limit exceeded. Please try again later."
-                                            ) {
-                                                const resetTime = new Date(
-                                                    parsedError.reset
-                                                );
-                                                const timeUntilReset = Math.max(
-                                                    0,
-                                                    Math.ceil(
-                                                        (resetTime.getTime() -
-                                                            Date.now()) /
-                                                            (1000 * 60)
-                                                    )
-                                                );
-                                                if (session?.user) {
-                                                    // Usuario logueado: mostrar botón de compra
-                                                    return (
-                                                        <>
-                                                            <p>
-                                                                You&apos;ve
-                                                                reached the
-                                                                daily generation
-                                                                limit (
-                                                                {
-                                                                    parsedError.limit
-                                                                }
-                                                                ) for registered
-                                                                users.
-                                                            </p>
-                                                            <p>
-                                                                Please try again
-                                                                after{" "}
-                                                                {resetTime.toLocaleTimeString()}
-                                                                .
-                                                            </p>
-                                                            <div className="pt-3">
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="default"
-                                                                    onClick={
-                                                                        handlePurchaseCredits
-                                                                    }
-                                                                    disabled={
-                                                                        isCheckoutLoading
-                                                                    }
-                                                                >
-                                                                    {isCheckoutLoading
-                                                                        ? "Processing..."
-                                                                        : "Buy 5 Extra Generations ($2.00)"}
-                                                                </Button>
-                                                                <p className="text-xs text-muted-foreground mt-1">
-                                                                    Purchase
-                                                                    credits to
-                                                                    continue
-                                                                    generating
-                                                                    today.
-                                                                </p>
-                                                            </div>
-                                                        </>
-                                                    );
-                                                } else {
-                                                    // Usuario anónimo: mostrar login
-                                                    return (
-                                                        <>
-                                                            <p>
-                                                                You&apos;ve
-                                                                reached the
-                                                                daily generation
-                                                                limit (
-                                                                {
-                                                                    parsedError.limit
-                                                                }
-                                                                ) for anonymous
-                                                                users.
-                                                            </p>
-                                                            <p>
-                                                                Please try again
-                                                                after{" "}
-                                                                {resetTime.toLocaleTimeString()}
-                                                                .
-                                                            </p>
-                                                            <div className="pt-2">
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() =>
-                                                                        signIn(
-                                                                            "google"
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <LogIn className="mr-2 h-4 w-4" />{" "}
-                                                                    Sign in with
-                                                                    Google
-                                                                </Button>
-                                                                <p className="text-xs text-muted-foreground mt-1">
-                                                                    Sign in to
-                                                                    increase
-                                                                    your daily
-                                                                    limit to 15
-                                                                    generations
-                                                                    (3x more!).
-                                                                </p>
-                                                            </div>
-                                                        </>
-                                                    );
-                                                }
-                                            }
-                                        } catch (e) {
-                                            return error.message;
+                                    <RateLimitError
+                                        error={error}
+                                        session={session}
+                                        handlePurchaseCredits={
+                                            handlePurchaseCredits
                                         }
-                                        return error.message;
-                                    })()}
+                                        isCheckoutLoading={isCheckoutLoading}
+                                        priceString={priceInfo?.formattedPrice}
+                                    />
                                 </div>
                             </div>
                         )}
@@ -604,7 +581,6 @@ function QuizContent() {
             </div>
             <footer className="mt-12 text-center text-sm text-muted-foreground">
                 <div className="flex justify-center items-center gap-4 mb-4">
-                    {/* Existing buttons */}
                     <a
                         href="https://github.com/Miguel07Alm/text2question"
                         target="_blank"
@@ -623,7 +599,6 @@ function QuizContent() {
                         <span>☕ Buy me a coffee</span>
                     </a>
                 </div>
-                {/* Links to legal pages */}
                 <div className="space-x-4">
                     <Link href="/terms-of-service" className="hover:underline">
                         Terms of Service

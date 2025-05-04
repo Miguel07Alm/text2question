@@ -2,123 +2,58 @@ import { GenerateQuestionsParams, QuestionSchema } from "@/types/types";
 import { streamObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { deepseek } from "@ai-sdk/deepseek";
-import { redis } from "@/lib/redis"; // Import the Redis client
-import { Ratelimit } from "@upstash/ratelimit"; // Import Ratelimit
 import { auth } from "@/auth";
+import { checkRateLimit, consumeGeneration } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
-
-// Rate Limiter for Unauthenticated Users (5 requests/day by IP) - Keep this
-const ipRateLimiter = new Ratelimit({
-    redis: redis,
-    limiter: Ratelimit.slidingWindow(5, "1 d"), // 5 requests per 1 day
-    analytics: true,
-    prefix: "@upstash/ratelimit_ip",
-});
-
-// Define the daily limit for authenticated users
-const DAILY_LIMIT_AUTH_USER = 15;
 
 export async function POST(req: Request) {
     const session = await auth(); // Get the session
     const userId = session?.user?.id;
-    let limit = 0;
-    let remaining = 0;
-    let reset = 0;
-    let success = false;
+    const { success, limit, remaining, reset, purchasedCredits, dailyUsed } =
+        await checkRateLimit(req);
 
-    const now = new Date();
-
-    if (userId) {
-        // --- Authenticated User: Manual Redis Limit Check ---
-        limit = DAILY_LIMIT_AUTH_USER;
-        const userGenerationsKey = `user:generations:${userId}`;
-        const userData = await redis.hgetall<{ count: string; lastReset: string }>(userGenerationsKey);
-
-        let currentCount = parseInt(userData?.count || '0');
-        let lastResetDate = userData?.lastReset ? new Date(userData.lastReset) : new Date(0); // Start of epoch if never reset
-
-        // Check if the last reset was more than 24 hours ago
-        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-        if (lastResetDate < oneDayAgo) {
-            // Reset the count and update the last reset time
-            currentCount = 0;
-            lastResetDate = now;
-            await redis.hset(userGenerationsKey, { count: currentCount.toString(), lastReset: lastResetDate.toISOString() });
-            console.log(`Reset generation count for user ${userId}`);
-        }
-
-        if (currentCount < limit) {
-            // Increment the count and update Redis
-            const newCount = await redis.hincrby(userGenerationsKey, 'count', 1);
-            // Ensure lastReset is set if this is the first generation after reset
-            if (newCount === 1 && !userData?.lastReset) {
-                 await redis.hset(userGenerationsKey, { lastReset: lastResetDate.toISOString() });
-            }
-            remaining = limit - newCount;
-            reset = lastResetDate.getTime() + 24 * 60 * 60 * 1000; // Reset time is 24h after last reset
-            success = true;
-            console.log(`User ${userId} generation ${newCount}/${limit}. Remaining: ${remaining}`);
-        } else {
-            // Daily limit reached, check for purchased credits
-            const creditsKey = `purchased_credits:user:${userId}`;
-            const purchasedCredits = await redis.get(creditsKey);
-            const creditsCount = purchasedCredits ? parseInt(purchasedCredits as string) : 0;
-            if (creditsCount > 0) {
-                // Use a purchased credit
-                await redis.decr(creditsKey);
-                remaining = 0;
-                reset = lastResetDate.getTime() + 24 * 60 * 60 * 1000;
-                success = true;
-                console.log(`User ${userId} used a purchased credit. Remaining purchased: ${creditsCount - 1}`);
-            } else {
-                // No daily or purchased credits left
-                remaining = 0;
-                reset = lastResetDate.getTime() + 24 * 60 * 60 * 1000;
-                success = false;
-                console.log(`User ${userId} has no daily or purchased credits left.`);
-            }
-        }
-
-    } else {
-        // --- Unauthenticated User: Use IP Rate Limiter ---
-        const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("remote-addr") ?? "127.0.0.1";
-        const result = await ipRateLimiter.limit(ip);
-        success = result.success;
-        limit = result.limit;
-        remaining = result.remaining;
-        reset = result.reset; // Keep the reset time from the IP limiter
-
-        if (!success) {
-             console.log(`IP ${ip} rate limited. Limit: ${limit}`);
-        }
-    }
-
-    // --- Handle Rate Limit Exceeded ---
     if (!success) {
+        console.log(
+            userId
+                ? `User ${userId}`
+                : `IP ${
+                      req.headers.get("x-forwarded-for") ??
+                      req.headers.get("remote-addr") ??
+                      "127.0.0.1"
+                  }`,
+            `rate limited. Limit: ${limit}, Daily Used: ${dailyUsed}, Purchased: ${purchasedCredits}`
+        );
         return new Response(
             JSON.stringify({
                 error: "Rate limit exceeded. Please try again later.",
                 limit,
-                remaining,
-                reset: new Date(reset).toISOString(), // Send reset time as ISO string
-                isLoggedIn: !!userId
+                remaining: 0, // Explicitly 0 when rate limited
+                reset: new Date(reset).toISOString(),
+                isLoggedIn: !!userId,
             }),
             {
                 status: 429, // Too Many Requests
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-RateLimit-Limit': limit.toString(),
-                    'X-RateLimit-Remaining': remaining.toString(),
-                    // Convert reset timestamp (milliseconds) to seconds for the header
-                    'X-RateLimit-Reset': Math.ceil(reset / 1000).toString(),
+                    "Content-Type": "application/json",
+                    "X-RateLimit-Limit": limit.toString(),
+                    "X-RateLimit-Remaining": "0",
+                    "X-RateLimit-Reset": Math.ceil(reset / 1000).toString(),
                 },
             }
         );
     }
 
-    // --- Proceed with Generation Logic if Rate Limit Not Hit ---
+    // --- Consume Generation Credit/Limit (only if check passed) ---
+    try {
+        await consumeGeneration(userId); // Call the consumption function
+    } catch (error) {
+        console.error("Error consuming generation:", error);
+
+        return new Response("Failed to record generation usage.", {
+            status: 500,
+        });
+    }
     try {
         const {
             input,
@@ -132,7 +67,7 @@ export async function POST(req: Request) {
             minCorrectAnswers = 1,
             maxCorrectAnswers = 1,
             output,
-            model = "deepseek" // Default to deepseek
+            model = "deepseek", // Default to deepseek
         }: GenerateQuestionsParams = await req.json();
         console.log("🚀 ~ POST ~ correctAnswersCount:", correctAnswersCount);
 
@@ -220,10 +155,13 @@ export async function POST(req: Request) {
               You must speak STRICTLY in the same language as the content provided, if there are different languages in the user input,
               prioritize the language where the content is most.
               `;
-        
+
         const result = streamObject({
             // @ts-ignore
-            model: model === "openai" ? openai("gpt-4o-mini") : deepseek("deepseek-chat"),
+            model:
+                model === "openai"
+                    ? openai("gpt-4o-mini")
+                    : deepseek("deepseek-chat"),
             schema: QuestionSchema,
             messages: [
                 {
@@ -232,7 +170,9 @@ export async function POST(req: Request) {
                 },
                 {
                     role: "user",
-                    content: `User input: ${input}\n\nAttached file: ${fileContent}\n\nCurrent questions that are being generated by you, try to follow the rules strictly: ${JSON.stringify(output)}`,
+                    content: `User input: ${input}\n\nAttached file: ${fileContent}\n\nCurrent questions that are being generated by you, try to follow the rules strictly: ${JSON.stringify(
+                        output
+                    )}`,
                 },
             ],
             temperature: 0.5,
