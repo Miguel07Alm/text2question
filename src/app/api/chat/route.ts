@@ -61,11 +61,24 @@ export async function POST(req: Request) {
             success = true;
             console.log(`User ${userId} generation ${newCount}/${limit}. Remaining: ${remaining}`);
         } else {
-            // Limit reached
-            remaining = 0;
-            reset = lastResetDate.getTime() + 24 * 60 * 60 * 1000; // Reset time is 24h after last reset
-            success = false;
-            console.log(`User ${userId} rate limited. Limit: ${limit}, Count: ${currentCount}`);
+            // Daily limit reached, check for purchased credits
+            const creditsKey = `purchased_credits:user:${userId}`;
+            const purchasedCredits = await redis.get(creditsKey);
+            const creditsCount = purchasedCredits ? parseInt(purchasedCredits as string) : 0;
+            if (creditsCount > 0) {
+                // Use a purchased credit
+                await redis.decr(creditsKey);
+                remaining = 0;
+                reset = lastResetDate.getTime() + 24 * 60 * 60 * 1000;
+                success = true;
+                console.log(`User ${userId} used a purchased credit. Remaining purchased: ${creditsCount - 1}`);
+            } else {
+                // No daily or purchased credits left
+                remaining = 0;
+                reset = lastResetDate.getTime() + 24 * 60 * 60 * 1000;
+                success = false;
+                console.log(`User ${userId} has no daily or purchased credits left.`);
+            }
         }
 
     } else {

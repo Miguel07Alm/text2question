@@ -178,9 +178,16 @@ AUTH_SECRET=your_secure_random_string
 UPSTASH_REDIS_REST_URL=your_upstash_redis_url
 UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
 
-# Base URL of your application (important for NextAuth redirects)
+# Stripe Configuration
+STRIPE_SECRET_KEY=sk_test_... or sk_live_...
+STRIPE_PRICE_ID=price_... # Price ID for the '5 Extra Generations' product
+STRIPE_WEBHOOK_SECRET=whsec_... # Get this from your Stripe webhook settings
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_... or pk_live_... # Your Stripe publishable key
+
+# Base URL of your application (important for NextAuth redirects and Stripe redirects)
 # Example: http://localhost:3000 for development
 NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000 # Also needed for Stripe redirects
 ```
 
 **Important:** Add `.env*.local` to your `.gitignore` file to avoid committing your secrets.

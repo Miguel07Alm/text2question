@@ -6,7 +6,11 @@ import { decodeQuiz } from "@/utils/share";
 import { Submit } from "@/components/submit";
 import { FileUpload } from "@/components/file-upload";
 import { QuestionList } from "@/components/question-list";
-import { GenerateQuestionsParams, Question, QuestionSchema } from "@/types/types";
+import {
+    GenerateQuestionsParams,
+    Question,
+    QuestionSchema,
+} from "@/types/types";
 import { experimental_useObject as useObject } from "ai/react";
 import {
     Select,
@@ -30,7 +34,8 @@ import { SystemPromptDialog } from "@/components/system-prompt-dialog";
 import { AIDisclaimer } from "@/components/ai-disclaimer";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { signIn, useSession } from 'next-auth/react';
+import { signIn, useSession } from "next-auth/react";
+import Link from "next/link";
 
 // Separate component for quiz content
 function QuizContent() {
@@ -39,7 +44,9 @@ function QuizContent() {
     const [questionType, setQuestionType] = useState<
         "multiple-choice" | "true-false" | "short-answer" | "mixed"
     >("mixed");
-    const [selectedModel, setSelectedModel] = useState<"deepseek" | "openai">("openai");
+    const [selectedModel, setSelectedModel] = useState<"deepseek" | "openai">(
+        "openai"
+    );
     const [questionCount, setQuestionCount] = useState(5);
     const [maxQuestions, setMaxQuestions] = useState(20);
     const [sharedQuiz, setSharedQuiz] = useState<Question[] | null>(null);
@@ -54,7 +61,8 @@ function QuizContent() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const router = useRouter();
-    const {data: session} = useSession();
+    const { data: session } = useSession();
+    const [isCheckoutLoading, setIsCheckoutLoading] = useState(false); 
 
     const {
         isLoading,
@@ -94,7 +102,6 @@ function QuizContent() {
     }, [searchParams, toast]);
 
     const handleSubmit = async () => {
-
         const generateParams: GenerateQuestionsParams = {
             input,
             fileContent,
@@ -110,6 +117,45 @@ function QuizContent() {
             model: selectedModel, // Add model selection
         };
         submit(generateParams);
+    };
+    // Function to handle purchasing credits
+    const handlePurchaseCredits = async () => {
+        setIsCheckoutLoading(true);
+        try {
+            const response = await fetch("/api/stripe/checkout-session", {
+                method: "POST",
+            });
+
+            const checkoutSession = await response.json();
+
+            if (!response.ok || !checkoutSession.url) {
+                console.error(
+                    "Failed to create checkout session:",
+                    checkoutSession
+                );
+                toast({
+                    // Use toast for better UX
+                    variant: "destructive",
+                    title: "Payment Error",
+                    description:
+                        checkoutSession.error || "Could not initiate payment.",
+                });
+                setIsCheckoutLoading(false);
+                return;
+            }
+
+            // Redirect to Stripe Checkout
+            window.location.href = checkoutSession.url;
+            // No need to set loading to false here as the page will redirect
+        } catch (err) {
+            console.error("Error purchasing credits:", err);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "An unexpected error occurred. Please try again.",
+            });
+            setIsCheckoutLoading(false);
+        }
     };
 
     const handleStop = () => {
@@ -399,15 +445,12 @@ function QuizContent() {
                     <>
                         {error && (
                             <div className="p-4 mb-4 text-sm border rounded-lg bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
-                                <div className="font-medium mb-1">
-                                    Error generating questions:
-                                </div>
                                 <div className="opacity-90">
                                     {(() => {
                                         try {
-                                            // Attempt to parse the error message as JSON
-                                            const parsedError = JSON.parse(error.message);
-                                            // Check if it's the specific rate limit error
+                                            const parsedError = JSON.parse(
+                                                error.message
+                                            );
                                             if (
                                                 parsedError &&
                                                 parsedError.error ===
@@ -423,26 +466,104 @@ function QuizContent() {
                                                             Date.now()) /
                                                             (1000 * 60)
                                                     )
-                                                ); // Time in minutes
-                                                return (
-                                                    <>
-                                                        <p>You&apos;ve reached the daily generation limit ({parsedError.limit}) for {session?.user ? "registered": "anonymous" } users.</p>
-                                                        <p>Please try again after {resetTime.toLocaleTimeString()}.</p>
-                                                        <div className="pt-2">
-                                                            <Button size="sm" variant="outline" onClick={() => signIn("google")}>
-                                                                <LogIn className="mr-2 h-4 w-4" /> Sign in with Google
-                                                            </Button>
-                                                            {/* Updated text below */}
-                                                            <p className="text-xs text-muted-foreground mt-1">Sign in to increase your daily limit to 15 generations (3x more!).</p>
-                                                        </div>
-                                                    </>
                                                 );
+                                                if (session?.user) {
+                                                    // Usuario logueado: mostrar botón de compra
+                                                    return (
+                                                        <>
+                                                            <p>
+                                                                You&apos;ve
+                                                                reached the
+                                                                daily generation
+                                                                limit (
+                                                                {
+                                                                    parsedError.limit
+                                                                }
+                                                                ) for registered
+                                                                users.
+                                                            </p>
+                                                            <p>
+                                                                Please try again
+                                                                after{" "}
+                                                                {resetTime.toLocaleTimeString()}
+                                                                .
+                                                            </p>
+                                                            <div className="pt-3">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="default"
+                                                                    onClick={
+                                                                        handlePurchaseCredits
+                                                                    }
+                                                                    disabled={
+                                                                        isCheckoutLoading
+                                                                    }
+                                                                >
+                                                                    {isCheckoutLoading
+                                                                        ? "Processing..."
+                                                                        : "Buy 5 Extra Generations ($2.00)"}
+                                                                </Button>
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    Purchase
+                                                                    credits to
+                                                                    continue
+                                                                    generating
+                                                                    today.
+                                                                </p>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                } else {
+                                                    // Usuario anónimo: mostrar login
+                                                    return (
+                                                        <>
+                                                            <p>
+                                                                You&apos;ve
+                                                                reached the
+                                                                daily generation
+                                                                limit (
+                                                                {
+                                                                    parsedError.limit
+                                                                }
+                                                                ) for anonymous
+                                                                users.
+                                                            </p>
+                                                            <p>
+                                                                Please try again
+                                                                after{" "}
+                                                                {resetTime.toLocaleTimeString()}
+                                                                .
+                                                            </p>
+                                                            <div className="pt-2">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() =>
+                                                                        signIn(
+                                                                            "google"
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <LogIn className="mr-2 h-4 w-4" />{" "}
+                                                                    Sign in with
+                                                                    Google
+                                                                </Button>
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    Sign in to
+                                                                    increase
+                                                                    your daily
+                                                                    limit to 15
+                                                                    generations
+                                                                    (3x more!).
+                                                                </p>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                }
                                             }
                                         } catch (e) {
-                                            // If parsing fails or it's not the rate limit error, display the original message
                                             return error.message;
                                         }
-                                        // Fallback to original message if parsing succeeds but it's not the rate limit error
                                         return error.message;
                                     })()}
                                 </div>
@@ -481,24 +602,37 @@ function QuizContent() {
                         </div>
                     )}
             </div>
-            <footer className="mt-12 flex justify-center items-center gap-4">
-                <a
-                    href="https://github.com/Miguel07Alm/text2question"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors duration-200 shadow-lg"
-                >
-                    <GithubIcon className="w-6 h-6" />
-                    <span className="font-semibold">View on GitHub</span>
-                </a>
-                <a
-                    href="https://buymeacoffee.com/miguelangeyx"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#FF5E5B] hover:bg-[#FF5E5B]/90 text-white transition-colors duration-200 shadow-lg"
-                >
-                    <span className="font-semibold">☕ Buy me a coffee</span>
-                </a>
+            <footer className="mt-12 text-center text-sm text-muted-foreground">
+                <div className="flex justify-center items-center gap-4 mb-4">
+                    {/* Existing buttons */}
+                    <a
+                        href="https://github.com/Miguel07Alm/text2question"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors duration-200 shadow-md text-sm"
+                    >
+                        <GithubIcon className="w-5 h-5" />
+                        <span>View on GitHub</span>
+                    </a>
+                    <a
+                        href="https://buymeacoffee.com/miguelangeyx"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#FF5E5B] hover:bg-[#FF5E5B]/90 text-white transition-colors duration-200 shadow-md text-sm"
+                    >
+                        <span>☕ Buy me a coffee</span>
+                    </a>
+                </div>
+                {/* Links to legal pages */}
+                <div className="space-x-4">
+                    <Link href="/terms-of-service" className="hover:underline">
+                        Terms of Service
+                    </Link>
+                    <span>|</span>
+                    <Link href="/privacy-policy" className="hover:underline">
+                        Privacy Policy
+                    </Link>
+                </div>
             </footer>
         </main>
     );

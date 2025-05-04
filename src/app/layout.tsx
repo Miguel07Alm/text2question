@@ -50,13 +50,15 @@ export default async function RootLayout({ // Make the layout async
                               <div className="flex items-center gap-2">
                                   {" "}
                                   {/* Group icon and text */}
-                                  <img
-                                      src="/icon.png"
-                                      alt="Text2Question Logo"
-                                      width={28}
-                                      height={28}
-                                      className="object-contain"
-                                  />
+                                  <a href="/">
+                                      <img
+                                          src="/icon.png"
+                                          alt="Text2Question Logo"
+                                          width={28}
+                                          height={28}
+                                          className="object-contain"
+                                      />
+                                  </a>
                                   <span className="font-semibold text-sm">
                                       Text2Question
                                   </span>
