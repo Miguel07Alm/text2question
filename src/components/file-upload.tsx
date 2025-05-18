@@ -1,8 +1,11 @@
 "use client";
 
+import type React from "react";
+
 import { useState } from "react";
 import * as pdfjs from "pdfjs-dist";
 import "pdfjs-dist/build/pdf.worker.mjs";
+import { FileText, Upload } from "lucide-react";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -13,6 +16,7 @@ interface FileUploadProps {
 export function FileUpload({ onFileContent }: FileUploadProps) {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [fileName, setFileName] = useState<string | null>(null);
 
     const extractPDFText = async (file: File): Promise<string> => {
         const arrayBuffer = await file.arrayBuffer();
@@ -22,7 +26,11 @@ export function FileUpload({ onFileContent }: FileUploadProps) {
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const content = await page.getTextContent();
-            text += content.items.filter((item) => "str" in item).map((item) => `Page ${page.pageNumber}: ` + item.str).join(" ") + "\n";
+            text +=
+                content.items
+                    .filter((item) => "str" in item)
+                    .map((item) => `Page ${page.pageNumber}: ` + item.str)
+                    .join(" ") + "\n";
         }
 
         return text.trim();
@@ -35,6 +43,7 @@ export function FileUpload({ onFileContent }: FileUploadProps) {
 
             setError(null);
             setLoading(true);
+            setFileName(file.name);
 
             if (file.type === "application/pdf") {
                 const text = await extractPDFText(file);
@@ -58,21 +67,90 @@ export function FileUpload({ onFileContent }: FileUploadProps) {
             <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
                 Upload File (PDF or Text)
             </label>
-            <input
-                type="file"
-                onChange={handleFileChange}
-                accept=".txt,.md,.pdf"
-                disabled={loading}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 
-                 file:rounded-full file:border-0 file:text-sm file:font-medium
-                 file:bg-gray-200 file:text-gray-900 hover:file:opacity-90
-                 dark:file:bg-gray-700 dark:file:text-gray-100
-                 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
+
+            <div className="relative">
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[hsl(var(--ghibli-cream))] dark:border-gray-700 rounded-xl cursor-pointer bg-white/50 dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        {fileName ? (
+                            <>
+                                <FileText className="w-8 h-8 mb-2 text-[hsl(var(--themed-blue))]" />
+                                <p className="mb-1 text-sm text-gray-700 dark:text-gray-300 font-medium">
+                                    {fileName}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    Click to change file
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <Upload className="w-8 h-8 mb-2 text-gray-400 dark:text-gray-500" />
+                                <p className="mb-1 text-sm text-gray-700 dark:text-gray-300">
+                                    <span className="font-medium">
+                                        Click to upload
+                                    </span>{" "}
+                                    or drag and drop
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    PDF, TXT or MD files
+                                </p>
+                            </>
+                        )}
+                    </div>
+                    <input
+                        type="file"
+                        className="hidden"
+                        onChange={handleFileChange}
+                        accept=".txt,.md,.pdf"
+                        disabled={loading}
+                    />
+                </label>
+            </div>
+
             {loading && (
-                <p className="text-blue-600 mt-2 text-sm">Processing file...</p>
+                <div className="mt-2 flex items-center text-blue-600 dark:text-blue-400">
+                    <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                    >
+                        <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                        ></circle>
+                        <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                    </svg>
+                    Processing file...
+                </div>
             )}
-            {error && <p className="text-red-600 mt-2 text-sm">{error}</p>}
+
+            {error && (
+                <p className="text-red-600 mt-2 text-sm flex items-center">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                    </svg>
+                    {error}
+                </p>
+            )}
         </div>
     );
 }

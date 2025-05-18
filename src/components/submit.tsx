@@ -1,3 +1,7 @@
+"use client";
+
+import type React from "react";
+
 import { cn } from "@/lib/utils";
 
 interface SubmitProps {
@@ -7,6 +11,7 @@ interface SubmitProps {
     disabled?: boolean;
     primaryColor?: "black" | "green-600" | "red-600" | "white" | "yellow";
     foregroundColor?: "white" | "black";
+    className?: string;
 }
 
 export function Submit({
@@ -16,6 +21,7 @@ export function Submit({
     disabled,
     primaryColor,
     foregroundColor,
+    className,
 }: SubmitProps) {
     const getButtonClasses = () => {
         if (children === "Stop Generation") {
@@ -48,7 +54,8 @@ export function Submit({
             disabled={loading || disabled}
             className={cn(
                 `w-full rounded-full py-3 font-medium transition-all disabled:opacity-50`,
-                getButtonClasses()
+                getButtonClasses(),
+                className
             )}
         >
             {loading ? "Loading..." : children}

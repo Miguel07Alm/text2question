@@ -21,10 +21,57 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Text2Question - Generate Quiz Exams from Text or PDFs",
-  description: "Generate multiple-choice, short-answer or true-false quiz exams from text descriptions or PDF documents using AI",
+  description:
+    "Generate multiple-choice, short-answer or true-false quiz exams from text descriptions or PDF documents using AI",
+  keywords: [
+    "quiz generator",
+    "ai quiz",
+    "pdf to quiz",
+    "text to quiz",
+    "exam generator",
+    "multiple choice",
+    "short answer",
+    "true false",
+  ],
+  authors: [{ name: "Miguel07Code" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://text2question.miguel07code.dev", // Replace with your actual domain
+    title: "Text2Question - Generate Quiz Exams from Text or PDFs",
+    description:
+      "Generate multiple-choice, short-answer or true-false quiz exams from text descriptions or PDF documents using AI",
+    images: [
+      {
+        url: "https://text2question.miguel07code.dev/icon.png", // Replace with your actual domain and image path
+        width: 256,
+        height: 256,
+        alt: "Text2Question Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Text2Question - Generate Quiz Exams from Text or PDFs",
+    description:
+      "Generate multiple-choice, short-answer or true-false quiz exams from text descriptions or PDF documents using AI",
+    images: ["https://text2question.com/icon.png"], // Replace with your actual domain and image path
+    creator: "@miguel07code", // Replace with your Twitter handle
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
-export default async function RootLayout({ // Make the layout async
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -33,8 +80,6 @@ export default async function RootLayout({ // Make the layout async
 
   return (
       <SessionProvider session={session}>
-          {" "}
-          {/* Pass session to provider */}
           <html lang="en" suppressHydrationWarning>
               <body
                   className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -45,11 +90,10 @@ export default async function RootLayout({ // Make the layout async
                       enableSystem
                   >
                       {/* Header */}
-                      <header className="px-8 lg:mx-auto max-w-2xl w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                      <header className="px-4 sm:px-8 mx-auto max-w-4xl border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                           <div className="flex h-14 max-w-screen-2xl items-center justify-between">
                               {/* Left side: Icon and App Title */}
                               <div className="flex items-center gap-2">
-                                  {" "}
                                   {/* Group icon and text */}
                                   <Link href="/">
                                       <img
