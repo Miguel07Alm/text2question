@@ -44,10 +44,10 @@ export async function generateMetadata({
             description: seoTranslations.description,
             images: [
                 {
-                    url: "https://text2question.miguel07code.dev/icon.png",
-                    width: 256,
-                    height: 256,
-                    alt: "Text2Question Logo",
+                    url: "https://text2question.miguel07code.dev/og-image-1200x630.png",
+                    width: 1200,
+                    height: 630,
+                    alt: seoTranslations.title,
                 },
             ],
         },
@@ -55,7 +55,9 @@ export async function generateMetadata({
             card: "summary_large_image",
             title: seoTranslations.title,
             description: seoTranslations.description,
-            images: ["https://text2question.miguel07code.dev/icon.png"],
+            images: [
+                "https://text2question.miguel07code.dev/og-image-1200x630.png",
+            ],
             creator: "@miguel07code",
         },
         robots: {
