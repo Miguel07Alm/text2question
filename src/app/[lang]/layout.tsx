@@ -4,13 +4,13 @@ import "@/app/globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import Script from "next/script";
-import { SessionProvider } from "next-auth/react"; // Import SessionProvider
+import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
 import { AuthButton } from "@/components/auth-button";
 import Link from "next/link";
-import LanguageSwitcher from "@/components/language-switcher"; // Added
-import { Locale } from "@/i18n.config"; // Added
-import { getDictionary } from "./dictionaries"; // Corrected import path
+import LanguageSwitcher from "@/components/language-switcher";
+import { Locale } from "@/i18n.config";
+import { getDictionary } from "./dictionaries";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +22,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// New function to generate metadata dynamically
 export async function generateMetadata({
     params,
 }: {
@@ -30,7 +29,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const awaitedParams = await params;
     const dictionary = await getDictionary(awaitedParams.lang);
-    const seoTranslations = dictionary.seo; // Corrected to use 'seo' key
+    const seoTranslations = dictionary.seo; 
 
     return {
         title: seoTranslations.title,
@@ -39,13 +38,13 @@ export async function generateMetadata({
         authors: [{ name: "Miguel07Code" }],
         openGraph: {
             type: "website",
-            locale: awaitedParams.lang === "en" ? "en_US" : awaitedParams.lang, // Adjust locale format if needed
-            url: "https://text2question.miguel07code.dev", // Replace with your actual domain
+            locale: awaitedParams.lang === "en" ? "en_US" : awaitedParams.lang,
+            url: "https://text2question.miguel07code.dev",
             title: seoTranslations.title,
             description: seoTranslations.description,
             images: [
                 {
-                    url: "https://text2question.miguel07code.dev/icon.png", // Replace with your actual domain and image path
+                    url: "https://text2question.miguel07code.dev/icon.png",
                     width: 256,
                     height: 256,
                     alt: "Text2Question Logo",
@@ -56,8 +55,8 @@ export async function generateMetadata({
             card: "summary_large_image",
             title: seoTranslations.title,
             description: seoTranslations.description,
-            images: ["https://text2question.miguel07code.dev/icon.png"], // Replace with your actual domain and image path
-            creator: "@miguel07code", // Replace with your Twitter handle
+            images: ["https://text2question.miguel07code.dev/icon.png"],
+            creator: "@miguel07code",
         },
         robots: {
             index: true,
@@ -75,7 +74,7 @@ export async function generateMetadata({
 
 export default async function RootLayout({
   children,
-  params, // Added
+  params,
 }: Readonly<{
   children: React.ReactNode;
   params: Promise<{ lang: Locale }>; 
@@ -86,7 +85,7 @@ export default async function RootLayout({
 
   return (
       <SessionProvider session={session}>
-          <html lang={awaitedParams.lang} suppressHydrationWarning> {/* Changed */}
+          <html lang={awaitedParams.lang} suppressHydrationWarning>
               <body
                   className={`${geistSans.variable} ${geistMono.variable} antialiased`}
               >
@@ -95,12 +94,9 @@ export default async function RootLayout({
                       defaultTheme="system"
                       enableSystem
                   >
-                      {/* Header */}
                       <header className="px-4 sm:px-8 mx-auto max-w-4xl border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                           <div className="flex h-14 max-w-screen-2xl items-center justify-between">
-                              {/* Left side: Icon and App Title */}
                               <div className="flex items-center gap-2">
-                                  {/* Group icon and text */}
                                   <Link href="/">
                                       <img
                                           src="/icon.png"
@@ -114,9 +110,7 @@ export default async function RootLayout({
                                       Text2Question
                                   </span>
                               </div>
-
-                              {/* Right side: Auth Button and Language Switcher */} {/* Changed */}
-                              <div className="flex items-center gap-4"> {/* Changed */}
+                              <div className="flex items-center gap-4">
                                   <LanguageSwitcher dictionary={dictionary.languageSwitcher} currentLocale={awaitedParams.lang} />
                                   <AuthButton />
                               </div>

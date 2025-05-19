@@ -682,7 +682,7 @@ function QuizContent() {
           <footer className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400">
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-4">
                   <a
-                      href="https://github.com/miguel07code/text2question"
+                      href="https://github.com/miguel07alm/text2question"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 hover:text-[hsl(var(--themed-blue))] transition-colors"
