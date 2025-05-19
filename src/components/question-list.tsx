@@ -14,6 +14,9 @@ import {
 } from "lucide-react";
 import { shuffleArray, shuffleMultipleChoiceOptions } from "@/utils/array";
 import confetti from "canvas-confetti";
+import { getDictionary } from "@/app/[lang]/dictionaries";
+import { Locale } from "@/i18n.config";
+import { TranslationLoading } from "./translation-loading";
 
 interface ShortAnswerResult {
     score: number | null;
@@ -23,12 +26,15 @@ interface ShortAnswerResult {
 interface QuestionListProps {
     questions: Question[];
     timeLimit?: number | null;
+    lang: Locale;
 }
 
 export function QuestionList({
     questions: initialQuestions,
     timeLimit = null,
+    lang,
 }: QuestionListProps) {
+    const [dictionary, setDictionary] = useState<any>(null);
     const [questions, setQuestions] = useState(initialQuestions);
     const [selectedAnswers, setSelectedAnswers] = useState<
         (number[] | string | undefined)[]
@@ -58,6 +64,14 @@ export function QuestionList({
     useEffect(() => {
         setQuestions(initialQuestions);
     }, [initialQuestions]);
+
+    useEffect(() => {
+        const fetchDictionary = async () => {
+            const dict = await getDictionary(lang);
+            setDictionary(dict);
+        };
+        fetchDictionary();
+    }, [lang]);
 
     // Shuffle multiple-choice options once at the beginning
     useEffect(() => {
@@ -431,6 +445,11 @@ export function QuestionList({
     const questionsToRender =
         quizMode === "all" ? questions : [questions[currentQuestionIndex]];
 
+    if (!dictionary) {
+        // Show loading state or fallback while dictionary is loading
+        return <TranslationLoading/>;
+    }
+
     return (
         <div className="space-y-8">
             {/* Quiz Header with Progress and Controls */}
@@ -441,15 +460,15 @@ export function QuestionList({
                             <BookOpen className="h-5 w-5 text-[hsl(var(--themed-blue))]" />
                             <h2 className="text-xl font-medium">
                                 {showResults
-                                    ? "Quiz Results"
-                                    : "Quiz Questions"}
+                                    ? dictionary.quiz_results
+                                    : dictionary.quiz_questions}
                             </h2>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium">
-                                        View Mode:
+                                        {dictionary.view_mode}
                                     </span>
                                     <div className="flex rounded-full p-0.5 bg-gray-100 dark:bg-gray-800">
                                         <button
@@ -460,7 +479,7 @@ export function QuestionList({
                                                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                                             }`}
                                         >
-                                            All Questions
+                                            {dictionary.all_questions}
                                         </button>
                                         <button
                                             onClick={() =>
@@ -472,7 +491,7 @@ export function QuestionList({
                                                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                                             }`}
                                         >
-                                            One by One
+                                            {dictionary.one_by_one}
                                         </button>
                                     </div>
                                 </div>
@@ -480,7 +499,7 @@ export function QuestionList({
 
                             <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
                                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                    Progress:
+                                    {dictionary.progress}
                                 </span>
                                 <span className="text-sm font-medium">
                                     {answeredCount} / {questions.length}
@@ -538,11 +557,12 @@ export function QuestionList({
                                 disabled={currentQuestionIndex === 0}
                                 className="px-3 py-1 text-sm rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 disabled:opacity-50"
                             >
-                                Previous
+                                {dictionary.previous}
                             </button>
                             <span className="text-sm font-medium">
-                                Question {currentQuestionIndex + 1} of{" "}
-                                {questions.length}
+                                {dictionary.question_of
+                                    .replace("{current}", currentQuestionIndex + 1)
+                                    .replace("{total}", questions.length)}
                             </span>
                             <button
                                 onClick={handleNextQuestion}
@@ -552,7 +572,7 @@ export function QuestionList({
                                 }
                                 className="px-3 py-1 text-sm rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 disabled:opacity-50"
                             >
-                                Next
+                                {dictionary.next}
                             </button>
                         </div>
                     )}
@@ -567,11 +587,10 @@ export function QuestionList({
                     <div className="fixed bottom-4 right-4 bg-red-100 dark:bg-red-900/70 text-red-600 dark:text-red-300 p-4 rounded-lg shadow-lg z-50 animate-pulse border border-red-200 dark:border-red-800">
                         <div className="flex items-center gap-2">
                             <AlertTriangle className="h-5 w-5" />
-                            <p className="font-medium">1 minute remaining!</p>
+                            <p className="font-medium">{dictionary.time_remaining_warning}</p>
                         </div>
                         <p className="text-sm mt-1">
-                            Quiz will be automatically submitted when time runs
-                            out.
+                            {dictionary.auto_submit_warning}
                         </p>
                     </div>
                 )}
@@ -583,14 +602,14 @@ export function QuestionList({
                     className="themed-card p-6 border-2 border-[hsl(var(--ghibli-cream))] dark:border-gray-700 bg-gradient-to-br from-white to-[hsl(var(--ghibli-cream))/30] dark:from-gray-800 dark:to-gray-800/50"
                 >
                     <h3 className="text-xl font-bold mb-6 text-center relative inline-block">
-                        <span className="relative z-10">Quiz Results</span>
+                        <span className="relative z-10">{dictionary.quiz_results}</span>
                         <div className="absolute bottom-0 left-0 h-3 w-full bg-[hsl(var(--themed-yellow))] opacity-30 -z-0 rounded-full"></div>
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         <div className="bg-white dark:bg-gray-800/50 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-center transform transition-transform hover:scale-105">
                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                                Score
+                                {dictionary.score}
                             </p>
                             <div className="relative inline-block">
                                 <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[hsl(var(--themed-blue))/20] to-[hsl(var(--themed-green))/20] blur-xl"></div>
@@ -613,7 +632,7 @@ export function QuestionList({
 
                         <div className="bg-white dark:bg-gray-800/50 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-center transform transition-transform hover:scale-105">
                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                                Correct Answers
+                                {dictionary.correct_answers}
                             </p>
                             <p className="text-4xl font-bold text-[hsl(var(--themed-blue))]">
                                 {correctCount}{" "}
@@ -636,15 +655,15 @@ export function QuestionList({
 
                         <div className="bg-white dark:bg-gray-800/50 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-center transform transition-transform hover:scale-105">
                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                                Time Spent
+                                {dictionary.time_spent}
                             </p>
                             <p className="text-4xl font-bold text-[hsl(var(--themed-forest))]">
                                 {formatTimeSpent(startTime, endTime)}
                             </p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                 {isPenalized
-                                    ? "Time limit exceeded"
-                                    : "Completed in time"}
+                                    ? dictionary.time_limit_exceeded
+                                    : dictionary.completed_in_time}
                             </p>
                         </div>
                     </div>
@@ -653,8 +672,7 @@ export function QuestionList({
                         <div className="p-3 mb-4 text-sm rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-center">
                             <AlertTriangle className="inline-block h-4 w-4 mr-1" />
                             <span>
-                                10% score penalty applied due to time limit
-                                exceeded.
+                                {dictionary.penalty_applied}
                             </span>
                         </div>
                     )}
@@ -676,7 +694,7 @@ export function QuestionList({
                                     fill="currentColor"
                                 />
                             </svg>
-                            Retake Quiz
+                            {dictionary.retake_quiz}
                         </button>
                     </div>
                 </div>
@@ -727,34 +745,11 @@ export function QuestionList({
                                                                 <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50/50 dark:bg-blue-950/50 rounded-lg border border-blue-100 dark:border-blue-900">
                                                                     <div className="flex-1">
                                                                         <h4 className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                                                                            Multiple
-                                                                            Selection
-                                                                            Required
+                                                                            {dictionary.multiple_selection_required}
                                                                         </h4>
                                                                         <p className="text-xs text-blue-600/80 dark:text-blue-400/80">
-                                                                            Select{" "}
-                                                                            {
-                                                                                question.correctAnswersCount
-                                                                            }{" "}
-                                                                            answers
+                                                                            {dictionary.select_n_answers.replace("{count}", question.correctAnswersCount)}
                                                                         </p>
-                                                                    </div>
-                                                                    <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded-md">
-                                                                        <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                                                                            {
-                                                                                (
-                                                                                    (selectedAnswers[
-                                                                                        actualIndex
-                                                                                    ] as number[]) ||
-                                                                                    []
-                                                                                )
-                                                                                    .length
-                                                                            }{" "}
-                                                                            of{" "}
-                                                                            {
-                                                                                question.correctAnswersCount
-                                                                            }
-                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             )}
@@ -1261,46 +1256,11 @@ export function QuestionList({
             `}
                     >
                         {isChecking ? (
-                            <>
-                                <svg
-                                    className="animate-spin h-5 w-5 text-white"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <circle
-                                        className="opacity-25"
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        strokeWidth="4"
-                                    ></circle>
-                                    <path
-                                        className="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                    ></path>
-                                </svg>
-                                Checking...
-                            </>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                         ) : (
-                            <>
-                                <svg
-                                    width="20"
-                                    height="20"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                                Check Answers
-                            </>
+                            <CheckCircle className="h-5 w-5" />
                         )}
+                        {dictionary.check_answers}
                     </button>
                 </div>
             )}

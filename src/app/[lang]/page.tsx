@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
 import { Question, QuestionSchema, GenerateQuestionsParams } from "@/types/types";
@@ -11,38 +11,56 @@ import { shuffleArray, shuffleMultipleChoiceOptions } from "@/utils/array";
 import Link from 'next/link'; // Added import for Link
 
 // UI Components
-import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch"; // Added import for Switch
+import { Button } from "@/components/ui/button"; // Assuming Button is used or can be added
+import { Input } from "@/components/ui/input"; // Assuming Input is used or can be added
 
-// Custom Components
-import { ModeToggle } from "@/components/ModeToggle";
-import { SystemPromptDialog } from "@/components/system-prompt-dialog";
+// Icons from lucide-react
+import { Sparkles, GithubIcon, BookOpen, Wand2, Lightbulb, HeartIcon, FileText, Settings, Brain, CheckCircle, XCircle, Clock, Calendar, Users, MessageSquare, Download, Share2, Trash2, Edit3, PlusCircle, MinusCircle, AlertTriangle, Info, Copy, ExternalLink, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Eye, EyeOff, Filter, ListChecks, Palette, Moon, Sun, Menu, X, Search, UploadCloud, Zap, ThumbsUp, ThumbsDown, Repeat, RotateCcw, Save, SlidersHorizontal, Terminal, UserCircle, Bot, BrainCircuit, Leaf } from 'lucide-react';
+import { getDictionary } from "./dictionaries";
+import { Locale } from "@/i18n.config";
+import { experimental_useObject as useObject } from '@ai-sdk/react';
 import { AIDisclaimer } from "@/components/ai-disclaimer";
-import { FileUpload } from "@/components/file-upload";
+import { DecorativeAccents } from "@/components/decorative-accents";
 import { ExpandedTextarea } from "@/components/expanded-textarea";
+import { ExportQuestions } from "@/components/export-questions";
+import { FileUpload } from "@/components/file-upload";
+import { InteractiveBackground } from "@/components/interactive-background";
+import { LoadingState } from "@/components/loading-state";
+import { ModeToggle } from "@/components/ModeToggle";
 import { NumberSelector } from "@/components/number-selector";
-import { Submit } from "@/components/submit";
+import { QuestionList } from "@/components/question-list";
 import { RateLimitError } from "@/components/rate-limit-error";
 import { ShareQuiz } from "@/components/share-quiz";
-import { ExportQuestions } from "@/components/export-questions";
-import { QuestionList } from "@/components/question-list";
-// Icons from lucide-react
-import { BrainCircuit, BookOpen, Wand2, Sparkles, Leaf, Lightbulb, GithubIcon } from "lucide-react";
-import { experimental_useObject as useObject } from '@ai-sdk/react';
-
-// Import renamed components
-import { InteractiveBackground } from "@/components/interactive-background";
-import { DecorativeAccents } from "@/components/decorative-accents";
+import { Submit } from "@/components/submit";
 import { ThemedCard } from "@/components/themed-card";
 import { ThemedSectionTitle } from "@/components/themed-section-title";
-import { LoadingState } from "@/components/loading-state";
-
 
 
 // Separate component for quiz content
 function QuizContent() {
+    const { lang } = useParams();
+    const [dictionary, setDictionary] = useState<any>(null);
+    const [translationLoading, setTranslationLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchDict = async () => {
+            if (lang) {
+                const d = await getDictionary(lang as Locale);
+                setDictionary(d);
+                setTranslationLoading(false);
+            } else {
+                // Fallback or error handling if lang is not available
+                const d = await getDictionary('en'); // Default to 'en' or handle error
+                setDictionary(d);
+                setTranslationLoading(false);
+            }
+        };
+        fetchDict();
+    }, [lang]);
+
   const [input, setInput] = useState("");
   const [fileContent, setFileContent] = useState("");
   const [questionType, setQuestionType] = useState<"multiple-choice" | "true-false" | "short-answer" | "mixed">("mixed");
@@ -145,24 +163,24 @@ function QuizContent() {
 
     if (paymentSuccess === "true") {
       toast({
-        title: "Payment Successful!",
-        description: "5 credits have been added to your account.",
+        title: dictionary?.payment_successful_title || "Payment Successful!",
+        description: dictionary?.payment_successful_description || "5 credits have been added to your account.",
         variant: "default", // Or use a specific success variant if defined
       });
       fetchRemainingGenerations(); // Re-fetch credits after successful purchase
       // Remove query params from URL without reload
-      router.replace("/", undefined); // Use router.replace
+      router.replace(`/${lang}`, undefined); // Use router.replace, ensure lang is included
     }
     if (paymentCancel === "true") {
       toast({
-        title: "Payment Cancelled",
-        description: "Your payment process was cancelled.",
+        title: dictionary?.payment_cancelled_title || "Payment Cancelled",
+        description: dictionary?.payment_cancelled_description || "Your payment process was cancelled.",
         variant: "destructive", // Or 'default'
       });
       // Remove query params from URL without reload
-      router.replace("/", undefined); // Use router.replace
+      router.replace(`/${lang}`, undefined); // Use router.replace, ensure lang is included
     }
-  }, [searchParams, toast, router]); // Add router to dependencies
+  }, [searchParams, toast, router, lang, dictionary]); // Add lang and dictionary to dependencies
 
   const handleSubmit = async () => {
     console.log("Handle submit");
@@ -198,8 +216,8 @@ function QuizContent() {
         toast({
           // Use toast for better UX
           variant: "destructive",
-          title: "Payment Error",
-          description: checkoutSession.error || "Could not initiate payment.",
+          title: dictionary?.payment_error_title || "Payment Error",
+          description: checkoutSession.error || dictionary?.payment_initiate_error || "Could not initiate payment.",
         });
         setIsCheckoutLoading(false);
         return;
@@ -210,8 +228,8 @@ function QuizContent() {
       console.error("Error purchasing credits:", err);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        title: dictionary?.error_title || "Error",
+        description: dictionary?.unexpected_error_description || "An unexpected error occurred. Please try again.",
       });
       setIsCheckoutLoading(false);
     }
@@ -220,6 +238,11 @@ function QuizContent() {
   const handleStop = () => {
     stop();
   };
+
+
+  if (!dictionary) {
+    return <LoadingState />;
+  }
 
   if (sharedQuiz) {
     return (
@@ -231,24 +254,24 @@ function QuizContent() {
           <button
             onClick={() => {
               setSharedQuiz(null)
-              router.push("/")
+              router.push(`/${lang}`)
             }}
             className="px-6 py-3 rounded-full bg-[hsl(var(--themed-blue))] text-white hover:bg-[hsl(var(--themed-blue))] hover:opacity-90 transition-all shadow-md"
           >
-            Create New Quiz
+            {dictionary.create_new_quiz_button}
           </button>
           <ModeToggle />
         </div>
         
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-3 text-center relative inline-block">
-            <span className="relative z-10">Shared Quiz</span>
+            <span className="relative z-10">{dictionary.shared_quiz_title}</span>
             <div className="absolute bottom-0 left-0 h-4 w-full bg-[hsl(var(--themed-yellow))] opacity-30 -z-0 rounded-full"></div>
           </h1>
-          <p className="text-muted-foreground">Answer the questions below to test your knowledge</p>
+          <p className="text-muted-foreground">{dictionary.shared_quiz_description}</p>
         </div>
         
-        <QuestionList questions={sharedQuiz} />
+        <QuestionList questions={sharedQuiz} lang={lang?.toString() as Locale ?? "en"} />
       </main>
     )
   }
@@ -259,12 +282,12 @@ function QuizContent() {
           <DecorativeAccents />
           <div className="flex w-full justify-between items-center mb-4">
               <div className="flex items-center gap-4">
-                  <SystemPromptDialog onPromptChange={setSystemPrompt} />
+                  {/* <SystemPromptDialog onPromptChange={setSystemPrompt} /> */}
                   {sessionStatus !== "loading" &&
                       remainingGenerations !== null && (
                           <div
                               className="flex items-center gap-1 text-sm text-muted-foreground border px-3 py-1.5 rounded-full shadow-sm bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm"
-                              title="Remaining Generations"
+                              title={dictionary.remaining_generations_tooltip}
                           >
                               <BrainCircuit className="h-4 w-4 text-[hsl(var(--themed-blue))]" />
                               <span className="font-medium">
@@ -279,12 +302,12 @@ function QuizContent() {
           <div className="text-center mb-12">
               <div className="inline-block relative">
                   <h1 className="text-4xl sm:text-5xl font-bold mb-3 text-center relative z-10">
-                      Text2Question
+                      {dictionary.app_title}
                   </h1>
                   <div className="absolute bottom-1 left-0 h-4 w-full bg-[hsl(var(--themed-yellow))] opacity-30 -z-0 rounded-full"></div>
               </div>
               <h2 className="text-xl sm:text-2xl font-medium text-center text-gray-700 dark:text-gray-300">
-                  Generate quiz questions from any given text using AI.
+                  {dictionary.app_subtitle}
               </h2>
           </div>
           <div className="mb-8">
@@ -299,7 +322,7 @@ function QuizContent() {
                   >
                       <span className="flex items-center justify-center gap-2">
                           <BookOpen className="h-4 w-4" />
-                          <span>Content</span>
+                          <span>{dictionary.tab_content}</span>
                       </span>
                   </button>
                   <button
@@ -312,7 +335,7 @@ function QuizContent() {
                   >
                       <span className="flex items-center justify-center gap-2">
                           <Wand2 className="h-4 w-4" />
-                          <span>Quiz Settings</span>
+                          <span>{dictionary.tab_quiz_settings}</span>
                       </span>
                   </button>
               </div>
@@ -322,7 +345,7 @@ function QuizContent() {
                       <ThemedSectionTitle>
                           <span className="flex items-center gap-2">
                               <Sparkles className="h-5 w-5 text-[hsl(var(--themed-blue))]" />
-                              AI Model
+                              {dictionary.ai_model_title}
                           </span>
                       </ThemedSectionTitle>
                       <Select
@@ -332,14 +355,18 @@ function QuizContent() {
                           value={selectedModel}
                       >
                           <SelectTrigger className="w-full sm:w-[220px] bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-2 border-[hsl(var(--ghibli-cream))] dark:border-gray-700 rounded-xl">
-                              <SelectValue placeholder="Select model" />
+                              <SelectValue
+                                  placeholder={
+                                      dictionary.select_model_placeholder
+                                  }
+                              />
                           </SelectTrigger>
                           <SelectContent>
                               <SelectItem value="deepseek">
-                                  Deepseek Chat
+                                  {dictionary.model_deepseek}
                               </SelectItem>
                               <SelectItem value="openai">
-                                  GPT-4o-mini
+                                  {dictionary.model_openai_gpt4o_mini}
                               </SelectItem>
                           </SelectContent>
                       </Select>
@@ -348,15 +375,15 @@ function QuizContent() {
                           <ThemedSectionTitle>
                               <span className="flex items-center gap-2">
                                   <Leaf className="h-5 w-5 text-[hsl(var(--themed-green))]" />
-                                  Your Content
+                                  {dictionary.your_content_title}
                               </span>
                           </ThemedSectionTitle>
-                          <FileUpload onFileContent={setFileContent} />
+                          <FileUpload onFileContent={setFileContent} dictionary={dictionary} />
                           <div className="mt-6">
                               <ExpandedTextarea
                                   value={input}
                                   onChange={(e) => setInput(e.target.value)}
-                                  placeholder="Describe the topic you want to generate questions about..."
+                                  placeholder={dictionary.content_placeholder}
                               />
                           </div>
                       </div>
@@ -368,7 +395,7 @@ function QuizContent() {
                       <ThemedSectionTitle>
                           <span className="flex items-center gap-2">
                               <Lightbulb className="h-5 w-5 text-[hsl(var(--themed-yellow))]" />
-                              Question Settings
+                              {dictionary.question_settings_title}
                           </span>
                       </ThemedSectionTitle>
 
@@ -376,7 +403,7 @@ function QuizContent() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                               <div className="space-y-2">
                                   <Label className="text-gray-900 dark:text-gray-100">
-                                      Question Type
+                                      {dictionary.question_type_label}
                                   </Label>
                                   <Select
                                       onValueChange={(value) =>
@@ -391,20 +418,26 @@ function QuizContent() {
                                       value={questionType}
                                   >
                                       <SelectTrigger className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-2 border-[hsl(var(--ghibli-cream))] dark:border-gray-700 rounded-xl">
-                                          <SelectValue placeholder="Select question type" />
+                                          <SelectValue
+                                              placeholder={
+                                                  dictionary.select_question_type_placeholder
+                                              }
+                                          />
                                       </SelectTrigger>
                                       <SelectContent>
                                           <SelectItem value="mixed">
-                                              Mixed
+                                              {dictionary.q_type_mixed}
                                           </SelectItem>
                                           <SelectItem value="multiple-choice">
-                                              Multiple Choice
+                                              {
+                                                  dictionary.q_type_multiple_choice
+                                              }
                                           </SelectItem>
                                           <SelectItem value="true-false">
-                                              True/False
+                                              {dictionary.q_type_true_false}
                                           </SelectItem>
                                           <SelectItem value="short-answer">
-                                              Short Answer
+                                              {dictionary.q_type_short_answer}
                                           </SelectItem>
                                       </SelectContent>
                                   </Select>
@@ -412,7 +445,7 @@ function QuizContent() {
 
                               <div className="space-y-2">
                                   <Label className="text-gray-900 dark:text-gray-100">
-                                      Number of Questions
+                                      {dictionary.number_of_questions_label}
                                   </Label>
                                   <NumberSelector
                                       value={questionCount}
@@ -428,7 +461,7 @@ function QuizContent() {
                                   {/* Content for multiple choice settings */}
                                   <div className="space-y-2">
                                       <Label className="text-gray-900 dark:text-gray-100">
-                                          Number of Options
+                                          {dictionary.mc_options_count_label}
                                       </Label>
                                       <NumberSelector
                                           value={optionsCount}
@@ -449,14 +482,16 @@ function QuizContent() {
                                           htmlFor="random-correct-answers"
                                           className="text-gray-900 dark:text-gray-100"
                                       >
-                                          Randomize Number of Correct Answers
+                                          {dictionary.mc_random_correct_label}
                                       </Label>
                                   </div>
                                   {isRandomCorrectAnswers ? (
                                       <div className="grid grid-cols-2 gap-4">
                                           <div className="space-y-2">
                                               <Label className="text-gray-900 dark:text-gray-100">
-                                                  Min Correct
+                                                  {
+                                                      dictionary.mc_min_correct_label
+                                                  }
                                               </Label>
                                               <NumberSelector
                                                   value={minCorrectAnswers}
@@ -469,7 +504,9 @@ function QuizContent() {
                                           </div>
                                           <div className="space-y-2">
                                               <Label className="text-gray-900 dark:text-gray-100">
-                                                  Max Correct
+                                                  {
+                                                      dictionary.mc_max_correct_label
+                                                  }
                                               </Label>
                                               <NumberSelector
                                                   value={maxCorrectAnswers}
@@ -484,7 +521,9 @@ function QuizContent() {
                                   ) : (
                                       <div className="space-y-2">
                                           <Label className="text-gray-900 dark:text-gray-100">
-                                              Number of Correct Answers
+                                              {
+                                                  dictionary.mc_correct_count_label
+                                              }
                                           </Label>
                                           <NumberSelector
                                               value={correctAnswersCount}
@@ -494,172 +533,202 @@ function QuizContent() {
                                           />
                                       </div>
                                   )}
+                                  <div className="flex items-center space-x-2 pt-4">
+                                      <Switch
+                                          id="time-limit"
+                                          checked={isTimeLimitEnabled}
+                                          onCheckedChange={
+                                              setIsTimeLimitEnabled
+                                          }
+                                      />
+                                      <Label
+                                          htmlFor="time-limit"
+                                          className="text-gray-900 dark:text-gray-100"
+                                      >
+                                          {dictionary.enable_time_limit_label}
+                                      </Label>
+                                  </div>
+                                  {isTimeLimitEnabled && (
+                                      <div className="space-y-2">
+                                          <Label className="text-gray-900 dark:text-gray-100">
+                                              {dictionary.quiz_time_limit_label}
+                                          </Label>
+                                          <NumberSelector
+                                              value={quizTimeLimit}
+                                              onChange={setQuizTimeLimit}
+                                              min={1}
+                                              max={180} // Example max, adjust as needed
+                                          />
+                                      </div>
+                                  )}
                               </div>
                           )}
-
-                          <div className="space-y-2">
-                              <Label className="text-gray-900 dark:text-gray-100">
-                                  Quiz Time Limit (minutes)
-                              </Label>
-                              <div className="flex items-center space-x-2">
-                                  <Switch
-                                      id="enable-time-limit"
-                                      checked={isTimeLimitEnabled}
-                                      onCheckedChange={setIsTimeLimitEnabled}
-                                  />
-                                  <Label
-                                      htmlFor="enable-time-limit"
-                                      className="text-gray-900 dark:text-gray-100"
-                                  >
-                                      Enable Time Limit
-                                  </Label>
-                              </div>
-                              {isTimeLimitEnabled && (
-                                  <NumberSelector
-                                      value={quizTimeLimit}
-                                      onChange={setQuizTimeLimit}
-                                      min={1}
-                                      max={180}
-                                  />
-                              )}
-                          </div>
                       </div>
                   </ThemedCard>
               )}
           </div>{" "}
           {/* This closes the div with className="mb-8" */}
-          {isLoading ? (
-              <Submit
-                  onClick={handleStop}
-                  loading={false}
-                  primaryColor="red-600"
-                  foregroundColor="white"
-                  className="themed-button bg-red-500 hover:bg-red-600"
-              >
-                  Stop Generation
-              </Submit>
-          ) : (
-              <>
-                  {error && (
-                      <div className="p-4 mb-4 text-sm border rounded-lg bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
-                          <div className="opacity-90">
-                              <RateLimitError
-                                  error={error}
-                                  session={session}
-                                  handlePurchaseCredits={handlePurchaseCredits}
-                                  isCheckoutLoading={isCheckoutLoading}
-                                  priceString={priceInfo?.formattedPrice}
-                              />
-                          </div>
-                      </div>
-                  )}
-                  <button
-                      onClick={handleSubmit}
-                      disabled={(!input && !fileContent) || isLoading}
-                      className="themed-button w-full py-4 px-6 text-lg font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          <div className="mt-12 mb-8">
+              {isLoading ? (
+                  <Submit
+                      onClick={handleStop}
+                      loading={false} // The button itself is not in a loading state
+                      primaryColor="red-600"
+                      foregroundColor="white"
+                      className="themed-button w-full py-4 px-6 text-lg font-medium rounded-xl bg-red-500 hover:bg-red-600"
                   >
-                      {isLoading ? (
-                          <span className="flex items-center justify-center gap-2">
-                              <svg
-                                  className="animate-spin h-5 w-5"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                              >
-                                  <circle
-                                      className="opacity-25"
-                                      cx="12"
-                                      cy="12"
-                                      r="10"
-                                      stroke="currentColor"
-                                      strokeWidth="4"
-                                  ></circle>
-                                  <path
-                                      className="opacity-75"
-                                      fill="currentColor"
-                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                  ></path>
-                              </svg>
-                              Generating...
-                          </span>
-                      ) : (
+                      {dictionary?.stop_generation_button || "Stop Generation"}
+                  </Submit>
+              ) : (
+                  <>
+                      {error && (
+                          <div className="p-4 mb-4 text-sm border rounded-lg bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
+                              <div className="opacity-90">
+                                  <RateLimitError
+                                      error={error}
+                                      session={session}
+                                      handlePurchaseCredits={
+                                          handlePurchaseCredits
+                                      }
+                                      isCheckoutLoading={isCheckoutLoading}
+                                      priceString={priceInfo?.formattedPrice}
+                                      dictionary={dictionary}
+                                  />
+                              </div>
+                          </div>
+                      )}
+                      <button
+                          onClick={handleSubmit}
+                          disabled={(!input && !fileContent) || isLoading} // isLoading will be false here
+                          className="themed-button w-full py-4 px-6 text-lg font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
                           <span className="flex items-center justify-center gap-2">
                               <Sparkles className="h-5 w-5" />
-                              Generate Questions
+                              {dictionary?.generate_questions_button ||
+                                  "Generate Questions"}
                           </span>
-                      )}
-                  </button>
-              </>
-          )}
-          {result &&
-              Array.isArray(result.questions) &&
-              result.questions.length > 0 && (
-                  <div className="space-y-8 mt-8">
-                      <div className="flex justify-between items-center">
-                          <ShareQuiz
-                              questions={result.questions as Question[]}
-                              isLoading={isLoading}
-                          />
-                          <ExportQuestions
-                              questions={result.questions as Question[]}
-                          />
-                      </div>
+                      </button>
+                  </>
+              )}
 
-                      <ThemedCard className="p-0 overflow-hidden">
-                          <div className="p-4 bg-[hsl(var(--ghibli-cream))] dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                                  Your Generated Quiz
-                              </h3>
-                          </div>
-                          <div className="p-6">
-                              <QuestionList
-                                  questions={result.questions as Question[]}
-                                  timeLimit={
-                                      isTimeLimitEnabled ? quizTimeLimit : null
-                                  }
-                              />
-                          </div>
-                      </ThemedCard>
+              {/* "No generations left" and "Buy credits" messages */}
+              {sessionStatus !== "authenticated" &&
+                  remainingGenerations === 0 && (
+                      <p className="text-center text-sm text-red-500 mt-4">
+                          {dictionary?.no_generations_left_guest}
+                      </p>
+                  )}
+              {sessionStatus === "authenticated" &&
+                  remainingGenerations === 0 &&
+                  priceInfo && (
+                      <div className="text-center mt-4">
+                          <p className="text-sm text-red-500 mb-2">
+                              {dictionary?.no_generations_left_auth}
+                          </p>
+                          <button
+                              onClick={handlePurchaseCredits}
+                              disabled={isCheckoutLoading}
+                              className="px-6 py-3 rounded-full bg-[hsl(var(--themed-blue))] text-white hover:bg-[hsl(var(--themed-blue))] hover:opacity-90 transition-all shadow-md disabled:opacity-50"
+                          >
+                              {isCheckoutLoading
+                                  ? dictionary?.loading_button
+                                  : dictionary?.buy_credits_button?.replace(
+                                        "{price}",
+                                        priceInfo.formattedPrice
+                                    ) ||
+                                    `Buy Credits (${priceInfo.formattedPrice})`}
+                          </button>
+                      </div>
+                  )}
+          </div>
+          {error &&
+              !isLoading && ( // General error display, only if not loading (as RateLimitError handles errors when !isLoading)
+                  <div className="mt-4 p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg">
+                      <p className="font-semibold mb-1">
+                          {dictionary.error_title}
+                      </p>
+                      <p>
+                          {error.message ||
+                              dictionary.unexpected_error_description}
+                      </p>
                   </div>
               )}
-          <footer className="mt-12 text-center text-sm text-muted-foreground">
-              <div className="flex justify-center items-center gap-4 mb-4">
+          {result?.questions && result.questions.length > 0 && (
+              <div className="mt-12">
+                  <ThemedSectionTitle>
+                      <span className="flex items-center gap-2">
+                          <Sparkles className="h-5 w-5 text-[hsl(var(--themed-yellow))]" />
+                          {dictionary.your_generated_quiz_title}
+                      </span>
+                  </ThemedSectionTitle>
+                  <div className="flex justify-end gap-2 mb-4">
+                      <ShareQuiz
+                          questions={result.questions as Question[]}
+                          lang={(lang?.toString() as Locale) ?? "en"}
+                          dictionary={dictionary}
+                          isLoading={isLoading}
+                      />
+                      <ExportQuestions
+                          questions={result.questions as Question[]}
+                          dictionary={dictionary}
+                      />
+                  </div>
+                  <QuestionList
+                      questions={result.questions as Question[]}
+                      lang={(lang?.toString() as Locale) ?? "en"}
+                  />
+              </div>
+          )}
+          <footer className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-4">
                   <a
-                      href="https://github.com/Miguel07Alm/text2question"
+                      href="https://github.com/miguel07code/text2question"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors duration-200 shadow-md text-sm"
+                      className="flex items-center gap-2 hover:text-[hsl(var(--themed-blue))] transition-colors"
                   >
-                      <GithubIcon className="w-5 h-5" />
-                      <span>View on GitHub</span>
+                      <GithubIcon className="h-5 w-5" />
+                      {dictionary?.view_on_github_button}
                   </a>
                   <a
-                      href="https://buymeacoffee.com/miguelangeyx"
+                      href="https://www.buymeacoffee.com/miguel07code"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#FF5E5B] hover:bg-[#FF5E5B]/90 text-white transition-colors duration-200 shadow-md text-sm"
+                      className="flex items-center gap-2 hover:text-yellow-500 transition-colors"
                   >
-                      <span>☕ Buy me a coffee</span>
+                      <HeartIcon className="h-5 w-5" />{" "}
+                      {/* Assuming HeartIcon for buymeacoffee */}
+                      {dictionary?.buy_me_a_coffee_button}
                   </a>
               </div>
-              <div className="space-x-4">
-                  <Link href="/terms-of-service" className="hover:underline">
-                      Terms of Service
+              <div className="space-x-4 mb-2">
+                  <Link
+                      href={`/${lang}/terms-of-service`}
+                      className="hover:underline"
+                  >
+                      {dictionary.terms_of_service_link}
                   </Link>
-                  <span>|</span>
-                  <Link href="/privacy-policy" className="hover:underline">
-                      Privacy Policy
+                  <Link
+                      href={`/${lang}/privacy-policy`}
+                      className="hover:underline"
+                  >
+                      {dictionary.privacy_policy_link}
                   </Link>
               </div>
+              <p>
+                  &copy; {new Date().getFullYear()} Text2Question.{" "}
+                  {dictionary.all_rights_reserved}
+              </p>
           </footer>
       </main>
   );
 }
 
-export default function Home() {
-  return (
-    <Suspense fallback={<LoadingState />}>
-      <QuizContent />
-    </Suspense>
-  );
+// Suspense Boundary for the main content
+export default function Page() {
+    return (
+        <Suspense fallback={<LoadingState />}> {/* Removed text prop if LoadingState doesn't accept it */}
+            <QuizContent />
+        </Suspense>
+    );
 }

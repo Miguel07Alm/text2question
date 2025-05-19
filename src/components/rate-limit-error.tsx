@@ -10,6 +10,7 @@ interface RateLimitErrorProps {
     handlePurchaseCredits: () => void;
     isCheckoutLoading: boolean;
     priceString?: string | null;
+    dictionary: any;
 }
 
 export function RateLimitError({
@@ -18,6 +19,7 @@ export function RateLimitError({
     handlePurchaseCredits,
     isCheckoutLoading,
     priceString,
+    dictionary
 }: RateLimitErrorProps) {
     try {
         const parsedError = JSON.parse(error.message);

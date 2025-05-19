@@ -11,9 +11,10 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/$
 
 interface FileUploadProps {
     onFileContent: (content: string) => void;
+    dictionary: any; // Added dictionary prop
 }
 
-export function FileUpload({ onFileContent }: FileUploadProps) {
+export function FileUpload({ onFileContent, dictionary }: FileUploadProps) {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [fileName, setFileName] = useState<string | null>(null);
@@ -54,7 +55,9 @@ export function FileUpload({ onFileContent }: FileUploadProps) {
             }
         } catch (err) {
             setError(
-                err instanceof Error ? err.message : "Failed to read file"
+                err instanceof Error
+                    ? err.message
+                    : dictionary?.fileUpload?.errorReadingFile || "Failed to read file"
             );
             console.error(err);
         } finally {
@@ -65,7 +68,7 @@ export function FileUpload({ onFileContent }: FileUploadProps) {
     return (
         <div className="w-full">
             <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-                Upload File (PDF or Text)
+                {dictionary?.fileUpload?.title || "Upload File (PDF or Text)"}
             </label>
 
             <div className="relative">
@@ -78,7 +81,7 @@ export function FileUpload({ onFileContent }: FileUploadProps) {
                                     {fileName}
                                 </p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    Click to change file
+                                    {dictionary?.fileUpload?.changeFile || "Click to change file"}
                                 </p>
                             </>
                         ) : (
@@ -86,12 +89,12 @@ export function FileUpload({ onFileContent }: FileUploadProps) {
                                 <Upload className="w-8 h-8 mb-2 text-gray-400 dark:text-gray-500" />
                                 <p className="mb-1 text-sm text-gray-700 dark:text-gray-300">
                                     <span className="font-medium">
-                                        Click to upload
+                                        {dictionary?.fileUpload?.clickToUpload || "Click to upload"}
                                     </span>{" "}
-                                    or drag and drop
+                                    {dictionary?.fileUpload?.dragAndDrop || "or drag and drop"}
                                 </p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    PDF, TXT or MD files
+                                    {dictionary?.fileUpload?.fileTypes || "PDF, TXT or MD files"}
                                 </p>
                             </>
                         )}
@@ -128,7 +131,7 @@ export function FileUpload({ onFileContent }: FileUploadProps) {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                     </svg>
-                    Processing file...
+                    {dictionary?.fileUpload?.processing || "Processing file..."}
                 </div>
             )}
 

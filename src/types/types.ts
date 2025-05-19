@@ -8,11 +8,11 @@ export const QuestionSchema = z.object({
             type: z.enum(["multiple-choice", "true-false", "short-answer"]),
             options: z.array(z.string().min(1)),
             correctAnswer: z.union([
-                z.array(z.number()),  // Siempre array para multiple-choice
-                z.string(),          // Para short-answer
-                z.boolean()          // Para true-false
+                z.array(z.number()),  
+                z.string(),          
+                z.boolean()          
             ]),
-            correctAnswersCount: z.number(),  // Ahora requerido, no opcional
+            correctAnswersCount: z.number(),  
             hint: z.string().optional(),
             why: z.string(),
             page: z.number().optional(), 
