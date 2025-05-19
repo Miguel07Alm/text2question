@@ -90,5 +90,14 @@
         "readErrorFallback": "ファイルの読み込みに失敗しました"
     },
     "export_pdf": "PDFとしてエクスポート",
-    "export_pdf_loading": "エクスポート中..."
+    "export_pdf_loading": "エクスポート中...",
+    "languageSwitcher": {
+        "label": "言語",
+        "placeholder": "言語を選択"
+    },
+    "seo": {
+        "title": "Text2Question - テキストまたはPDFからクイズ試験を生成",
+        "description": "AIを使用して、テキストの説明またはPDFドキュメントから、多肢選択式、短い回答、または正誤式のクイズ試験を生成します",
+        "keywords": "クイズジェネレーター、AIクイズ、PDFからクイズ、テキストからクイズ、試験ジェネレーター、多肢選択式、短い回答、正誤式"
+    }
 }

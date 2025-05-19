@@ -91,5 +91,16 @@
     "readErrorFallback": "Error al leer el archivo"
   },
   "export_pdf": "Exportar como PDF",
-  "export_pdf_loading": "Exportando..."
+  "export_pdf_loading": "Exportando...",
+  
+  "languageSwitcher": {
+    "label": "Idioma",
+    "placeholder": "Seleccionar Idioma",
+    "selectLanguage": "Seleccionar Idioma"
+  },
+  "seo": {
+    "title": "Text2Question - Genera Exámenes de Quiz a partir de Texto o PDFs",
+    "description": "Genera exámenes de quiz de opción múltiple, respuesta corta o verdadero/falso a partir de descripciones de texto o documentos PDF utilizando IA",
+    "keywords": "Generador de quiz, quiz de IA, PDF a quiz, texto a quiz, generador de exámenes, opción múltiple, respuesta corta, verdadero falso"
+  }
 }

@@ -90,5 +90,14 @@
         "readErrorFallback": "Fehler beim Lesen der Datei"
     },
     "export_pdf": "Als PDF exportieren",
-    "export_pdf_loading": "Exportiere..."
+    "export_pdf_loading": "Exportiere...",
+    "languageSwitcher": {
+        "label": "Sprache",
+        "placeholder": "Sprache auswählen"
+    },
+    "seo": {
+        "title": "Text2Question - Generiere Quiz Prüfungen aus Text oder PDFs",
+        "description": "Generiere Multiple-Choice-, Kurzantwort- oder Richtig-Falsch-Quiz Prüfungen aus Textbeschreibungen oder PDF-Dokumenten mithilfe von KI",
+        "keywords": "Quiz Generator, KI Quiz, PDF zu Quiz, Text zu Quiz, Examens Generator, Multiple Choice, Kurze Antwort, Richtig Falsch"
+    }
 }

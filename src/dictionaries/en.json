@@ -90,5 +90,15 @@
     "readErrorFallback": "Failed to read file"
   },
   "export_pdf": "Export as PDF",
-  "export_pdf_loading": "Exporting..."
+  "export_pdf_loading": "Exporting...",
+  "languageSwitcher": {
+    "label": "Language",
+    "placeholder": "Select Language",
+    "selectLanguage": "Select Language"
+  },
+  "seo": {
+    "title": "Text2Question - Generate Quiz Exams from Text or PDFs",
+    "description": "Generate multiple-choice, short-answer or true-false quiz exams from text descriptions or PDF documents using AI",
+    "keywords": "quiz generator, ai quiz, pdf to quiz, text to quiz, exam generator, multiple choice, short answer, true false"
+  }
 }

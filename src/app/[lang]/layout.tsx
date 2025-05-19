@@ -8,6 +8,9 @@ import { SessionProvider } from "next-auth/react"; // Import SessionProvider
 import { auth } from "@/auth";
 import { AuthButton } from "@/components/auth-button";
 import Link from "next/link";
+import LanguageSwitcher from "@/components/language-switcher"; // Added
+import { Locale } from "@/i18n.config"; // Added
+import { getDictionary } from "./dictionaries"; // Corrected import path
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,68 +22,71 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Text2Question - Generate Quiz Exams from Text or PDFs",
-  description:
-    "Generate multiple-choice, short-answer or true-false quiz exams from text descriptions or PDF documents using AI",
-  keywords: [
-    "quiz generator",
-    "ai quiz",
-    "pdf to quiz",
-    "text to quiz",
-    "exam generator",
-    "multiple choice",
-    "short answer",
-    "true false",
-  ],
-  authors: [{ name: "Miguel07Code" }],
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://text2question.miguel07code.dev", // Replace with your actual domain
-    title: "Text2Question - Generate Quiz Exams from Text or PDFs",
-    description:
-      "Generate multiple-choice, short-answer or true-false quiz exams from text descriptions or PDF documents using AI",
-    images: [
-      {
-        url: "https://text2question.miguel07code.dev/icon.png", // Replace with your actual domain and image path
-        width: 256,
-        height: 256,
-        alt: "Text2Question Logo",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Text2Question - Generate Quiz Exams from Text or PDFs",
-    description:
-      "Generate multiple-choice, short-answer or true-false quiz exams from text descriptions or PDF documents using AI",
-    images: ["https://text2question.com/icon.png"], // Replace with your actual domain and image path
-    creator: "@miguel07code", // Replace with your Twitter handle
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
-};
+// New function to generate metadata dynamically
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ lang: Locale }>;
+}): Promise<Metadata> {
+  const awaitedParams = await params;
+    const dictionary = await getDictionary(awaitedParams.lang);
+    const seoTranslations = dictionary.seo; // Corrected to use 'seo' key
+
+    return {
+        title: seoTranslations.title,
+        description: seoTranslations.description,
+        keywords: seoTranslations.keywords,
+        authors: [{ name: "Miguel07Code" }],
+        openGraph: {
+            type: "website",
+            locale: awaitedParams.lang === "en" ? "en_US" : awaitedParams.lang, // Adjust locale format if needed
+            url: "https://text2question.miguel07code.dev", // Replace with your actual domain
+            title: seoTranslations.title,
+            description: seoTranslations.description,
+            images: [
+                {
+                    url: "https://text2question.miguel07code.dev/icon.png", // Replace with your actual domain and image path
+                    width: 256,
+                    height: 256,
+                    alt: "Text2Question Logo",
+                },
+            ],
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: seoTranslations.title,
+            description: seoTranslations.description,
+            images: ["https://text2question.miguel07code.dev/icon.png"], // Replace with your actual domain and image path
+            creator: "@miguel07code", // Replace with your Twitter handle
+        },
+        robots: {
+            index: true,
+            follow: true,
+            googleBot: {
+                index: true,
+                follow: true,
+                "max-video-preview": -1,
+                "max-image-preview": "large",
+                "max-snippet": -1,
+            },
+        },
+    };
+}
 
 export default async function RootLayout({
   children,
+  params, // Added
 }: Readonly<{
   children: React.ReactNode;
+  params: Promise<{ lang: Locale }>; 
 }>) {
-  const session = await auth(); // Fetch session on the server
+  const awaitedParams = await params;
+  const session = await auth(); 
+  const dictionary = await getDictionary(awaitedParams.lang); 
 
   return (
       <SessionProvider session={session}>
-          <html lang="en" suppressHydrationWarning>
+          <html lang={awaitedParams.lang} suppressHydrationWarning> {/* Changed */}
               <body
                   className={`${geistSans.variable} ${geistMono.variable} antialiased`}
               >
@@ -109,8 +115,9 @@ export default async function RootLayout({
                                   </span>
                               </div>
 
-                              {/* Right side: Auth Button */}
-                              <div className="flex items-center">
+                              {/* Right side: Auth Button and Language Switcher */} {/* Changed */}
+                              <div className="flex items-center gap-4"> {/* Changed */}
+                                  <LanguageSwitcher dictionary={dictionary.languageSwitcher} currentLocale={awaitedParams.lang} />
                                   <AuthButton />
                               </div>
                           </div>
