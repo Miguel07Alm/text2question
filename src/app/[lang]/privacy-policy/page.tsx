@@ -29,8 +29,6 @@ export default function PrivacyPolicyPage() {
             <p>
                 {companyName}
                 <br />
-                [Your Address, if applicable]
-                <br />
                 Email: <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
             </p>
 
