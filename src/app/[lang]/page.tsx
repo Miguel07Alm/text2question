@@ -691,7 +691,7 @@ function QuizContent() {
                       {dictionary?.view_on_github_button}
                   </a>
                   <a
-                      href="https://www.buymeacoffee.com/miguel07code"
+                      href="https://buymeacoffee.com/miguelangeyx"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 hover:text-yellow-500 transition-colors"
