@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/hooks/use-toast";
-import { Question, QuestionSchema, GenerateQuestionsParams } from "@/types/types";
+import { Question, QuestionSchema, GenerateQuestionsParams, Model } from "@/types/types";
 import { decodeQuiz } from "@/utils/share";
 import { shuffleArray, shuffleMultipleChoiceOptions } from "@/utils/array";
 // import { useObject } from 'ai/react'; // Assuming useObject is from Vercel AI SDK - Commented out as it's causing an error
@@ -64,7 +64,7 @@ function QuizContent() {
   const [input, setInput] = useState("");
   const [fileContent, setFileContent] = useState("");
   const [questionType, setQuestionType] = useState<"multiple-choice" | "true-false" | "short-answer" | "mixed">("mixed");
-  const [selectedModel, setSelectedModel] = useState<"deepseek" | "openai">("openai");
+  const [selectedModel, setSelectedModel] = useState<Model>("gemini-2.0-flash");
   const [questionCount, setQuestionCount] = useState(5);
   const [maxQuestions, setMaxQuestions] = useState(20);
   const [sharedQuiz, setSharedQuiz] = useState<Question[] | null>(null);
@@ -282,7 +282,6 @@ function QuizContent() {
           <DecorativeAccents />
           <div className="flex w-full justify-between items-center mb-4">
               <div className="flex items-center gap-4">
-                  {/* <SystemPromptDialog onPromptChange={setSystemPrompt} /> */}
                   {sessionStatus !== "loading" &&
                       remainingGenerations !== null && (
                           <div
@@ -350,7 +349,7 @@ function QuizContent() {
                       </ThemedSectionTitle>
                       <Select
                           onValueChange={(value) =>
-                              setSelectedModel(value as "deepseek" | "openai")
+                              setSelectedModel(value as Model)
                           }
                           value={selectedModel}
                       >
@@ -362,11 +361,14 @@ function QuizContent() {
                               />
                           </SelectTrigger>
                           <SelectContent>
-                              <SelectItem value="deepseek">
-                                  {dictionary.model_deepseek}
+                              <SelectItem value="gemini-2.0-flash">
+                                  Gemini 2.0 Flash
                               </SelectItem>
-                              <SelectItem value="openai">
-                                  {dictionary.model_openai_gpt4o_mini}
+                              <SelectItem value="deepseek-chat">
+                                  Deepseek Chat
+                              </SelectItem>
+                              <SelectItem value="openai/gpt-4o-mini">
+                                  GPT-4o-mini
                               </SelectItem>
                           </SelectContent>
                       </Select>
@@ -378,7 +380,10 @@ function QuizContent() {
                                   {dictionary.your_content_title}
                               </span>
                           </ThemedSectionTitle>
-                          <FileUpload onFileContent={setFileContent} dictionary={dictionary} />
+                          <FileUpload
+                              onFileContent={setFileContent}
+                              dictionary={dictionary}
+                          />
                           <div className="mt-6">
                               <ExpandedTextarea
                                   value={input}

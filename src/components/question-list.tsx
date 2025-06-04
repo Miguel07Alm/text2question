@@ -876,7 +876,7 @@ export function QuestionList({
                                               isSelected
                                                   ? isMultiple
                                                       ? "font-medium text-gray-900 dark:text-white"
-                                                      : "font-medium text-white dark:text-white"
+                                                      : "font-medium text-gray-900 dark:text-white"
                                                   : "font-normal text-gray-700 dark:text-gray-300"
                                           }
                                         `}

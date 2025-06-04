@@ -1,12 +1,9 @@
-import { GenerateQuestionsParams, QuestionSchema } from "@/types/types";
-import { streamObject } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { deepseek } from "@ai-sdk/deepseek";
+import { GenerateQuestionsParams, ModelToLanguageModel, QuestionSchema } from "@/types/types";
+import { LanguageModelV1, streamObject } from "ai";
 import { auth } from "@/auth";
 import { checkRateLimit, consumeGeneration } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
-
 export async function POST(req: Request) {
     const session = await auth(); // Get the session
     const userId = session?.user?.id;
@@ -67,7 +64,7 @@ export async function POST(req: Request) {
             minCorrectAnswers = 1,
             maxCorrectAnswers = 1,
             output,
-            model = "deepseek", // Default to deepseek
+            model = "gemini-2.0-flash", // Default to Gemini 2.0 Flash
         }: GenerateQuestionsParams = await req.json();
         console.log("🚀 ~ POST ~ correctAnswersCount:", correctAnswersCount);
 
@@ -155,13 +152,9 @@ export async function POST(req: Request) {
               You must speak STRICTLY in the same language as the content provided, if there are different languages in the user input,
               prioritize the language where the content is most.
               `;
-
+        const selectedModel: LanguageModelV1 = ModelToLanguageModel[model];
         const result = streamObject({
-            // @ts-ignore
-            model:
-                model === "openai"
-                    ? openai("gpt-4o-mini")
-                    : deepseek("deepseek-chat"),
+            model: selectedModel,
             schema: QuestionSchema,
             messages: [
                 {
@@ -176,6 +169,9 @@ export async function POST(req: Request) {
                 },
             ],
             temperature: 0.5,
+            onError: (error) => {
+                console.error("Error generating questions:", error);
+            },
         });
 
         return result.toTextStreamResponse();

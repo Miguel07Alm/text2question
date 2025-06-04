@@ -39,8 +39,6 @@
     "tab_quiz_settings": "إعدادات الاختبار",
     "ai_model_title": "نموذج الذكاء الاصطناعي",
     "select_model_placeholder": "اختر نموذج",
-    "model_deepseek": "Deepseek Chat",
-    "model_openai_gpt4o_mini": "GPT-4o-mini",
     "your_content_title": "المحتوى الخاص بك",
     "content_placeholder": "صف الموضوع الذي تريد إنشاء أسئلة حوله...",
     "question_settings_title": "إعدادات السؤال",

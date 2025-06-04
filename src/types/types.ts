@@ -1,3 +1,6 @@
+import { deepseek } from "@ai-sdk/deepseek";
+import { google } from "@ai-sdk/google";
+import { LanguageModelV1, openrouter } from "@openrouter/ai-sdk-provider";
 import { DeepPartial } from "ai";
 import { z } from "zod";
 
@@ -42,7 +45,7 @@ export type GenerateQuestionsParams = {
     isRandomCorrectAnswers?: boolean;
     minCorrectAnswers?: number;
     maxCorrectAnswers?: number;
-    model: "deepseek" | "openai";
+    model: Model;
     output?:
         | (
               | DeepPartial<{
@@ -59,3 +62,11 @@ export type GenerateQuestionsParams = {
           )[]
         | undefined;
 };
+
+export type Model = "deepseek-chat" | "openai/gpt-4o-mini" | "gemini-2.0-flash";
+
+export const ModelToLanguageModel: Record<Model, LanguageModelV1> = {
+    "deepseek-chat": deepseek("deepseek-chat"),
+    "openai/gpt-4o-mini": openrouter.chat("openai/gpt-4o-mini"),
+    "gemini-2.0-flash": google("gemini-2.0-flash"),
+}

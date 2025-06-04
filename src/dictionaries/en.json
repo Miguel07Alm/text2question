@@ -39,8 +39,6 @@
   "tab_quiz_settings": "Quiz Settings",
   "ai_model_title": "AI Model",
   "select_model_placeholder": "Select model",
-  "model_deepseek": "Deepseek Chat",
-  "model_openai_gpt4o_mini": "GPT-4o-mini",
   "your_content_title": "Your Content",
   "content_placeholder": "Describe the topic you want to generate questions about...",
   "question_settings_title": "Question Settings",

@@ -39,8 +39,6 @@
     "tab_quiz_settings": "クイズの設定",
     "ai_model_title": "AIモデル",
     "select_model_placeholder": "モデルを選択",
-    "model_deepseek": "Deepseek Chat",
-    "model_openai_gpt4o_mini": "GPT-4o-mini",
     "your_content_title": "あなたのコンテンツ",
     "content_placeholder": "質問を生成したいトピックを説明してください...",
     "question_settings_title": "質問の設定",
