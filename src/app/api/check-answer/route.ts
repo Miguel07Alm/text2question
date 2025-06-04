@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { z } from "zod";
 
@@ -7,7 +7,7 @@ export async function POST(req: Request) {
         const { userAnswer, correctAnswer } = await req.json();
 
         const response = await generateObject({
-            model: openai("gpt-4o-mini"),
+            model: google("gemini-2.0-flash"),
             messages: [
             {
                 role: "system",

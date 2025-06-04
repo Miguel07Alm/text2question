@@ -1108,9 +1108,7 @@ export function QuestionList({
                                                     {/* Show correct answer for incorrect responses */}
                                                     {!answerResults[
                                                         actualIndex
-                                                    ] &&
-                                                        question.type !==
-                                                            "short-answer" && (
+                                                    ] && (
                                                             <div className="text-sm space-y-1 mb-2">
                                                                 {question.type ===
                                                                     "multiple-choice" &&
@@ -1136,6 +1134,18 @@ export function QuestionList({
                                                                     <p>
                                                                         <span className="font-medium">
                                                                             Correct
+                                                                            Answer:
+                                                                        </span>{" "}
+                                                                        {String(
+                                                                            question.correctAnswer
+                                                                        )}
+                                                                    </p>
+                                                                )}
+                                                                {question.type ===
+                                                                    "short-answer" && (
+                                                                    <p>
+                                                                        <span className="font-medium">
+                                                                            Expected
                                                                             Answer:
                                                                         </span>{" "}
                                                                         {String(

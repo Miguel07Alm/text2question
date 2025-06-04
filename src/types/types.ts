@@ -9,13 +9,13 @@ export const QuestionSchema = z.object({
         z.object({
             question: z.string(),
             type: z.enum(["multiple-choice", "true-false", "short-answer"]),
-            options: z.array(z.string().min(1)),
+            options: z.array(z.string().min(1)).optional(),
             correctAnswer: z.union([
                 z.array(z.number()),  
                 z.string(),          
                 z.boolean()          
             ]),
-            correctAnswersCount: z.number(),  
+            correctAnswersCount: z.number().optional(),  
             hint: z.string().optional(),
             why: z.string(),
             page: z.number().optional(), 

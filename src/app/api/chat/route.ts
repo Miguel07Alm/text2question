@@ -118,9 +118,37 @@ export async function POST(req: Request) {
               
               ${typePrompt}
               
-              For true/false, avoid absolute statements and focus on testing understanding.
-              For multiple-choice, ensure all options are of similar length and grammatically consistent.
-              For short answers, specify clearly what constitutes a complete response.
+              QUESTION TYPE SPECIFIC RULES:
+              
+              ${questionType === "multiple-choice" || questionType === "mixed" ? `
+              For MULTIPLE-CHOICE questions:
+              - Generate exactly ${optionsCount} options
+              ${correctAnswersPrompt}
+              - The 'correctAnswer' field MUST be an array of indices for multiple correct answers
+              - All correct answers must be equally valid
+              - The correctAnswer field must always be an array, even for single answers
+              - Distribute correct answers randomly among the options
+              - Include clear explanations why each selected answer is correct
+              - Ensure all options are of similar length and grammatically consistent
+              ` : ""}
+              
+              ${questionType === "true-false" || questionType === "mixed" ? `
+              For TRUE-FALSE questions:
+              - The 'correctAnswer' field MUST be a boolean (true or false)
+              - Do NOT include an 'options' field
+              - Do NOT include a 'correctAnswersCount' field
+              - Avoid absolute statements and focus on testing understanding
+              ` : ""}
+              
+              ${questionType === "short-answer" || questionType === "mixed" ? `
+              For SHORT-ANSWER questions:
+              - The 'correctAnswer' field MUST be a string containing the expected answer
+              - Do NOT include an 'options' field
+              - Do NOT include a 'correctAnswersCount' field
+              - Specify clearly what constitutes a complete response
+              - The answer should be concise but complete (usually 1-3 words or a short phrase)
+              - Focus on key terms, concepts, or specific values that demonstrate understanding
+              ` : ""}
 
               You must strictly use this type of questions: ${questionType.replace(
                   "-",
@@ -135,17 +163,6 @@ export async function POST(req: Request) {
               - If no specific page number is available, omit the page field
               
               For example, if the answer comes from "Page 5:" in the text, set page: 5 in the response.
-              
-              For multiple-choice questions, you MUST follow these rules strictly:
-              - Generate exactly ${optionsCount} options
-              ${correctAnswersPrompt}
-              - The 'correctAnswer' field MUST be an array of indices for multiple correct answers
-
-              Important requirements for multiple answers:
-              - All correct answers must be equally valid
-              - The correctAnswer field must always be an array, even for single answers
-              - Distribute correct answers randomly among the options
-              - Include clear explanations why each selected answer is correct
               
               ${systemPrompt ? `Custom Behaviour: ${systemPrompt}` : ""}
 
