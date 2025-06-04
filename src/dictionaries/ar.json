@@ -89,6 +89,9 @@
     },
     "export_pdf": "تصدير كملف PDF",
     "export_pdf_loading": "يتم التصدير...",
+    "export_markdown": "تصدير كملف Markdown",
+    "export_button": "تصدير",
+    "export_loading": "يتم التصدير...",
     "languageSwitcher": {
         "label": "اللغة",
         "placeholder": "اختر اللغة"

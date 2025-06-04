@@ -89,6 +89,9 @@
     },
     "export_pdf": "Als PDF exportieren",
     "export_pdf_loading": "Exportiere...",
+    "export_markdown": "Als Markdown exportieren",
+    "export_button": "Exportieren",
+    "export_loading": "Exportiere...",
     "languageSwitcher": {
         "label": "Sprache",
         "placeholder": "Sprache auswählen"

@@ -4,6 +4,7 @@ import { encodeQuiz } from "@/utils/share";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { Locale } from "@/i18n.config";
+import { Button } from "./ui/button";
 
 interface ShareQuizProps {
     questions: Question[];
@@ -30,10 +31,10 @@ export function ShareQuiz({ questions, isLoading, dictionary, lang }: ShareQuizP
     };
 
     return (
-        <button
+        <Button
+        variant="secondary"
             onClick={handleShare}
             disabled={isLoading || questions.length === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
             title={
                 isLoading
                     ? dictionary?.share_quiz_button_title_loading
@@ -42,6 +43,6 @@ export function ShareQuiz({ questions, isLoading, dictionary, lang }: ShareQuizP
         >
             <Share2 className="w-4 h-4" />
             {dictionary?.share_quiz_button_text || "Share Quiz"}
-        </button>
+        </Button>
     );
 }

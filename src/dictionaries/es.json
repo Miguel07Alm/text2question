@@ -90,6 +90,9 @@
   },
   "export_pdf": "Exportar como PDF",
   "export_pdf_loading": "Exportando...",
+  "export_markdown": "Exportar como Markdown",
+  "export_button": "Exportar",
+  "export_loading": "Exportando...",
   
   "languageSwitcher": {
     "label": "Idioma",

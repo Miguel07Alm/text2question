@@ -89,6 +89,9 @@
     },
     "export_pdf": "PDFとしてエクスポート",
     "export_pdf_loading": "エクスポート中...",
+    "export_markdown": "Markdownとしてエクスポート",
+    "export_button": "エクスポート",
+    "export_loading": "エクスポート中...",
     "languageSwitcher": {
         "label": "言語",
         "placeholder": "言語を選択"
