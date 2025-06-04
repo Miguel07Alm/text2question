@@ -176,11 +176,11 @@ export function ExportQuestions({ questions, dictionary }: ExportQuestionsProps)
                         if (isCorrect) {
                             pdf.setFont("helvetica", "bold");
                             pdf.setTextColor(34, 197, 94); // Green for correct
-                            pdf.text("✓", margin + 5, yPosition);
+                            pdf.text("[X]", margin + 5, yPosition);
                         } else {
                             pdf.setFont("helvetica", "normal");
                             pdf.setTextColor(107, 114, 128); // Gray for incorrect
-                            pdf.text("○", margin + 5, yPosition);
+                            pdf.text("[ ]", margin + 5, yPosition);
                         }
                         
                         pdf.setTextColor(51, 51, 51);
