@@ -4,13 +4,14 @@ Text2Question is an open-source application that automatically generates quizzes
 
 ## What Does This App Do?
 
-Text2Question generates quiz questions from any given text. Users can upload text files or input text directly, and the app will create a variety of question types such as multiple-choice, true/false, and short-answer. The app also includes features like real-time answer verification, hints, and the ability to export quizzes.
+Text2Question generates quiz questions from any given text. Users can upload text files or input text directly, and the app will create a variety of question types such as multiple-choice, true/false, and short-answer. The app also includes features like real-time answer verification, hints, and the ability to export quizzes in multiple formats.
 
 ## Features
 
 - 🤖 AI-powered question generation
   - Multiple AI model support:
-    - Deepseek Chat (default)
+    - Gemini 2.0 flash (default)
+    - Deepseek Chat
     - OpenAI GPT-4o-mini
   - Configurable model selection
 - 🔑 **User Authentication:**
@@ -24,7 +25,7 @@ Text2Question generates quiz questions from any given text. Users can upload tex
     - Smart answer distribution
     - Visual feedback for multiple selections
   - True/False
-  - Short answer
+  - Short answer with intelligent evaluation
   - Mixed mode
 - ⏱️ Quiz Timer Features:
   - Optional time limits for quizzes
@@ -39,18 +40,31 @@ Text2Question generates quiz questions from any given text. Users can upload tex
   - Time spent tracking
   - Penalties visualization
   - Progress indicators
-  - Beautiful PDF exports
+  - Beautiful exports in multiple formats
 - 📚 File upload support with page reference tracking
 - 🎨 Dark/Light mode
 - 💡 Hint system for questions
 - 📖 Detailed explanations for each answer
 - 📄 Page references for questions from PDFs
-- ✨ Real-time answer verification
-- 📤 Export functionality:
-  - PDF export with styling
-  - Theme-aware exports
-  - Multi-page support
-  - High-quality rendering
+- ✨ Real-time answer verification with AI-powered grading for short answers
+- 📤 **Advanced Export Functionality:**
+  - **PDF Export:**
+    - Professional styling with modern typography
+    - Fully selectable text (not image-based)
+    - Intelligent page break handling
+    - Color-coded correct/incorrect answers
+    - Page footers with generation info
+    - Proper character encoding (UTF-8 compatible)
+    - Theme-aware design elements
+  - **Markdown Export:**
+    - Clean, readable markdown format
+    - Structured with headings and formatting
+    - Includes all question metadata
+    - Perfect for documentation or sharing
+  - **Flexible Export Options:**
+    - Dropdown menu for format selection
+    - Export progress indicators
+    - Disabled state during processing
 - 🔀 Random question and answer shuffling
 - 🔗 Share quizzes via URL
 - 🔄 Retake quizzes with new random order
@@ -64,6 +78,10 @@ Text2Question generates quiz questions from any given text. Users can upload tex
   - Persistent user preferences
   - Timer configuration
   - Export settings
+- 🐛 **Bug Fixes & Improvements:**
+  - Fixed short-answer evaluation showing incorrect "0" responses
+  - Improved question generation reliability
+  - Better error handling for edge cases
 
 ## How It Works
 
@@ -85,9 +103,21 @@ Text2Question generates quiz questions from any given text. Users can upload tex
   - Correct/incorrect indication
   - Detailed explanation of the correct answer
   - Page reference for further reading (when available)
+- **Smart Answer Evaluation:**
+  - Multiple choice: Instant verification with visual feedback
+  - True/False: Immediate correct/incorrect indication
+  - Short answer: AI-powered evaluation with detailed reasoning
 - Option to retake quiz with reshuffled questions
 
-### Sharing
+### Export & Sharing
+- **Multiple Export Formats:**
+  - **PDF Export:** Professional documents with selectable text, proper formatting, and modern styling
+  - **Markdown Export:** Clean, structured format perfect for documentation
+- **Export Features:**
+  - Intelligent dropdown menu for format selection
+  - Real-time export progress indicators
+  - Professional styling with proper character encoding
+  - Color-coded answers and explanations
 - Generate shareable links for your quizzes
 - Recipients get randomized question order
 - Perfect for classroom or study group use
@@ -165,7 +195,7 @@ Create a `.env.local` file in the root directory with the following content. You
 # AI API Keys (at least one is required)
 OPENAI_API_KEY=your_openai_api_key
 DEEPSEEK_API_KEY=your_deepseek_api_key
-
+GOOGLE_GENERATIVE_AI_API_KEY=your_google_generative_api_key
 # Google OAuth Credentials
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret

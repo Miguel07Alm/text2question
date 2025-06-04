@@ -367,7 +367,7 @@ function QuizContent() {
                               <SelectItem value="deepseek-chat">
                                   Deepseek Chat
                               </SelectItem>
-                              <SelectItem value="openai/gpt-4o-mini">
+                              <SelectItem value="gpt-4o-mini">
                                   GPT-4o-mini
                               </SelectItem>
                           </SelectContent>
