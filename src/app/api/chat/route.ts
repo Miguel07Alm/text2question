@@ -134,15 +134,20 @@ export async function POST(req: Request) {
               
               ${questionType === "true-false" || questionType === "mixed" ? `
               For TRUE-FALSE questions:
-              - The 'correctAnswer' field MUST be a boolean (true or false)
+              - The 'correctAnswer' field MUST be a boolean (true or false) - NEVER a number
+              - EXAMPLES: correctAnswer: true OR correctAnswer: false
+              - INVALID: correctAnswer: 0, correctAnswer: 1, correctAnswer: "true"
               - Do NOT include an 'options' field
               - Do NOT include a 'correctAnswersCount' field
               - Avoid absolute statements and focus on testing understanding
+              - The answer must be either true or false based on the factual accuracy of the statement
               ` : ""}
               
               ${questionType === "short-answer" || questionType === "mixed" ? `
               For SHORT-ANSWER questions:
-              - The 'correctAnswer' field MUST be a string containing the expected answer
+              - The 'correctAnswer' field MUST be a string containing the expected answer - NEVER a number
+              - EXAMPLES: correctAnswer: "photosynthesis", correctAnswer: "Albert Einstein"
+              - INVALID: correctAnswer: 0, correctAnswer: 1, correctAnswer: true
               - Do NOT include an 'options' field
               - Do NOT include a 'correctAnswersCount' field
               - Specify clearly what constitutes a complete response
@@ -157,6 +162,11 @@ export async function POST(req: Request) {
 
               If there is only a question type, you must avoid using other types of questions.
               
+              CRITICAL: Ensure correct data types for 'correctAnswer' field:
+              - Multiple-choice: ARRAY of numbers [0, 1, 2, etc.]
+              - True-false: BOOLEAN (true or false)
+              - Short-answer: STRING ("answer text here")
+              
               Additional requirements:
               - When the content comes from a PDF or document with pages, include the page number where the answer can be found in the 'page' field
               - The page number should be extracted from the context where the answer is found
@@ -164,8 +174,6 @@ export async function POST(req: Request) {
               
               For example, if the answer comes from "Page 5:" in the text, set page: 5 in the response.
               
-              ${systemPrompt ? `Custom Behaviour: ${systemPrompt}` : ""}
-
               You must speak STRICTLY in the same language as the content provided, if there are different languages in the user input,
               prioritize the language where the content is most.
               `;
